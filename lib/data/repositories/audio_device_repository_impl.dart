@@ -13,7 +13,7 @@ class AudioDeviceRepositoryImpl implements AudioDeviceRepository {
           await _channel.invokeMethod('getAudioDevices');
       return devices
           .map((device) => AudioDeviceInfo(device['name'], device['sampleRate'],
-              device['channels'], device['callbackFunction'], device['delay']))
+              device['channels'], device['callbackFunction']))
           .toList();
     } on PlatformException catch (e) {
       debugPrint("Failed to get audio devices: ${e.message}");

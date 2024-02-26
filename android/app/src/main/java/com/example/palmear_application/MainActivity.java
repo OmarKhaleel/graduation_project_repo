@@ -37,7 +37,6 @@ public class MainActivity extends FlutterActivity {
                         deviceInfo.put("sampleRate", device.getSampleRates()[0]); // Assuming the first sample rate is representative
                         deviceInfo.put("channels", device.getChannelCounts()[0] == 1 ? "mono" : "stereo");
                         deviceInfo.put("callbackFunction", device.isSource() ? "Yes" : "No");
-                        deviceInfo.put("delay", getAudioDelay(device)); // Fetch and include audio delay
                         deviceList.add(deviceInfo);
                     }
 
@@ -48,28 +47,4 @@ public class MainActivity extends FlutterActivity {
             }
         );
     }
-
-    private int getAudioDelay(AudioDeviceInfo device) {
-        if (device == null) {
-            return 0;
-        }
-
-        int type = device.getType();
-        
-        if (type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-            type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-            type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-            type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-            type == AudioDeviceInfo.TYPE_USB_DEVICE ||
-            type == AudioDeviceInfo.TYPE_USB_HEADSET ||
-            type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
-            type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
-            
-            int latency = device.getOutputLatency();
-            return latency;
-        } else {
-            return 0;
-        }
-    }
-
 }

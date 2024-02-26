@@ -81,8 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           Text('Sample Rate: ${device.sampleRate} Hz'),
                           Text('Channels: ${device.channels}'),
                           Text('Callback Function: ${device.callbackFunction}'),
-                          Text(
-                              'Delay: ${device.delay} ms'), // Display audio delay
                         ],
                       ),
                     );
