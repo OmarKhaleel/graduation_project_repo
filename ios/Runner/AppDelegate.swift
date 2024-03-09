@@ -26,7 +26,6 @@ import AVFoundation
                         deviceInfo["sampleRate"] = session.sampleRate
                         deviceInfo["channels"] = input.channels == 1 ? "mono" : "stereo"
                         deviceInfo["callbackFunction"] = input.dataSources != nil ? "Yes" : "No"
-                        deviceInfo["deviceDelay"] = input.deviceDelay ?? 0
                         deviceList.append(deviceInfo)
                     }
                     result(deviceList)
