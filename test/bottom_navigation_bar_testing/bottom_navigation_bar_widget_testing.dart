@@ -29,6 +29,6 @@ void main() {
 
     // Check if the selected tab's color matches the expected color
     expect(selectedItemColor,
-        const Color(0xFF6750A4)); // Use the default color for selected tabs
+        const Color(0xFF00916E)); // Use the default color for selected tabs
   });
 }

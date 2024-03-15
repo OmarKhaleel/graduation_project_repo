@@ -117,10 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Please enter your credentials',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 Column(
@@ -128,23 +125,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text(
                       'Email',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 5),
                     TextFormField(
-                      key: const Key('email_field'),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF00916E)),
+                        key: const Key('email_field'),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF00916E)),
+                          ),
+                          hintText: 'Enter your email',
                         ),
-                        hintText: 'Enter your email',
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      onChanged: setEmail,
-                    ),
+                        keyboardType: TextInputType.emailAddress,
+                        onChanged: setEmail),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -153,10 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text(
                       'Password',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 5),
                     TextFormField(
