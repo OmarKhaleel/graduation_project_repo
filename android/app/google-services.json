@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "638597228344",
+    "project_id": "palmearapplication-1f40c",
+    "storage_bucket": "palmearapplication-1f40c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638597228344:android:db2b96054fd52a84d7c3cd",
+        "android_client_info": {
+          "package_name": "com.example.palmear_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFWak3IZ35ag4pHE4-DdJOetQZ2R5eSvs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -15,6 +15,7 @@ class BottomNavigationBarScreen extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: selectedIndex,
       onTap: onItemSelected,
+      selectedItemColor: const Color(0xFF00916E),
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home),

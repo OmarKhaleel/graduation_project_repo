@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_app_id">AIzaSyDFWak3IZ35ag4pHE4-DdJOetQZ2R5eSvs</string>
+    <string name="google_api_key">AIzaSyDFWak3IZ35ag4pHE4-DdJOetQZ2R5eSvs</string>
+    <string name="firebase_database_url">https://console.firebase.google.com/u/0/project/palmearapplication-1f40c/database/palmearapplication-1f40c-default-rtdb/data</string>
+    <string name="gcm_defaultSenderId">638597228344</string>
+    <string name="project_id">palmearapplication-1f40c</string>
+    <!-- Add other Firebase options here -->
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBrbs5VwErtQ7ZgbQH-zHfZON4u-pAfZ6U</string>
+	<key>GCM_SENDER_ID</key>
+	<string>638597228344</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.palmearApplication</string>
+	<key>PROJECT_ID</key>
+	<string>palmearapplication-1f40c</string>
+	<key>STORAGE_BUCKET</key>
+	<string>palmearapplication-1f40c.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:638597228344:ios:7e5207ef8ef93d0dd7c3cd</string>
+</dict>
+</plist>

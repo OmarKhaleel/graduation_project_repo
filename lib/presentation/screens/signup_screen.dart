@@ -1,39 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
+import 'package:palmear_application/data/services/firebase_auth_services.dart';
 import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
-import 'package:palmear_application/presentation/screens/home_screen.dart';
+import 'package:palmear_application/presentation/screens/signin_screen.dart';
+import 'package:palmear_application/presentation/widgets/toast.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  late String email;
-  late String password;
+class _SignUpScreenState extends State<SignUpScreen> {
   bool agreeToTerms = false;
   late GetAudioDevices getAudioDevices;
+
+  final FirebaseAuthService _auth = FirebaseAuthService();
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    email = '';
-    password = '';
     final audioDeviceRepository = AudioDeviceRepositoryImpl();
     getAudioDevices = GetAudioDevices(audioDeviceRepository);
   }
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void setEmail(String value) {
     setState(() {
-      email = value;
+      _emailController.text = value;
     });
   }
 
   void setPassword(String value) {
     setState(() {
-      password = value;
+      _passwordController.text = value;
     });
   }
 
@@ -44,41 +54,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Color getButtonColor() {
-    if (email.isNotEmpty && password.isNotEmpty && agreeToTerms) {
+    if (_emailController.text.isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        agreeToTerms) {
       return const Color(0xFF00916E);
     } else {
       return const Color(0xFF66BEA8);
-    }
-  }
-
-  void login() {
-    if (email.isNotEmpty && password.isNotEmpty && agreeToTerms) {
-      if (email == 'example123@gmail.com' && password == '123') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MyHomePage(getAudioDevices: getAudioDevices),
-          ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Sign In Error'),
-              content: const Text('Invalid email or password'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
     }
   }
 
@@ -100,57 +81,60 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 60),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                 const Text(
                   'Welcome to Palmear',
                   style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 100),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                 const Text(
                   'Please enter your credentials',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
                       'Email',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 13.0, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 5.0),
                     TextFormField(
-                        key: const Key('email_field'),
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF00916E)),
-                          ),
-                          hintText: 'Enter your email',
+                      key: const Key('email_field'),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF00916E)),
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        onChanged: setEmail),
+                        hintText: 'Enter your email',
+                      ),
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: setEmail,
+                    ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
                       'Password',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 13.0, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 5.0),
                     TextFormField(
                       key: const Key('password_field'),
                       decoration: const InputDecoration(
@@ -159,25 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         hintText: 'Enter your password',
                       ),
+                      controller: _passwordController,
                       obscureText: true,
                       onChanged: setPassword,
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () {
-                    // Implement forgot password here
-                  },
-                  child: const Text(
-                    'Forgot Password?',
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 Row(
                   children: [
                     Checkbox(
@@ -193,15 +165,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           decoration: TextDecoration.underline,
                           color: Colors.blue,
-                          fontSize: 12,
+                          fontSize: 12.0,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 ElevatedButton(
-                  onPressed: login,
+                  onPressed: _signUp,
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
                       getButtonColor(),
@@ -214,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  child: const Text('Login'),
+                  child: const Text('Sign Up'),
                 ),
               ],
             ),
@@ -222,5 +194,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
+  }
+
+  void _signUp() {
+    String email = _emailController.text;
+    String password = _passwordController.text;
+
+    _auth.signUpWithEmailAndPassword(email, password);
+
+    try {
+      showToast(message: "User is successfully created");
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const SignInScreen()));
+    } catch (e) {
+      showToast(message: "Error signing up: $e");
+    }
   }
 }
