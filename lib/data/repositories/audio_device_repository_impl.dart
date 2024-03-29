@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
 import 'package:flutter/services.dart';
 
-class AudioDeviceRepositoryImpl implements AudioDeviceRepository {
+class AudioDeviceRepositoryImpl {
   final MethodChannel _channel = const MethodChannel('audio_devices');
 
-  @override
   Future<List<AudioDeviceInfo>> getAudioDevices() async {
     try {
       final List<dynamic> devices =

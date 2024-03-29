@@ -1,7 +1,7 @@
+import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository.dart';
 
-class TestAudioDeviceRepository implements AudioDeviceRepository {
+class TestAudioDeviceRepository implements AudioDeviceRepositoryImpl {
   @override
   Future<List<AudioDeviceInfo>> getAudioDevices() async {
     // Create a list of audio devices (mock data)

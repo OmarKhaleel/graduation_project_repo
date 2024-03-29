@@ -24,7 +24,7 @@
 1. Run the Dart test file containing the provided test code.
 
    - Which could be done through the following command line in the terminal:
-     flutter test test/signin_testing/unit_testing/signin_unit_test.dart
+     flutter test test/signin_signup_testing/signin_signup_unit_test.dart
    - Or if you wish to test all testing files under the 'test' folder you do that through the following command line in the terminal:
      flutter test
      or

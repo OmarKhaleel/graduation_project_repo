@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository.dart';
 import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
 import 'package:palmear_application/presentation/widgets/bottom_navigation_bar.dart';
 import 'map_screen.dart';
@@ -24,7 +24,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isPalmearAudioAmplifierConnected = false;
   List<AudioDeviceInfo> _audioDevices = [];
 
-  final audioDeviceRepository = AudioDeviceRepository();
+  final audioDeviceRepository = AudioDeviceRepositoryImpl();
 
   @override
   void initState() {
