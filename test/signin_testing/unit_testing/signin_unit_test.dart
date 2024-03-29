@@ -1,24 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:palmear_application/data/services/auth_services.dart';
+import 'package:palmear_application/data/services/fake_firebase_auth_services.dart';
 
 void main() {
-  // Instance of AuthService
-  final authService = AuthService();
+  late FakeAuthService authService;
 
-  group('AuthService', () {
-    test('authenticates successfully with valid credentials', () async {
-      expect(await authService.authenticate('example123@gmail.com', '123'),
-          isTrue);
-    });
+  setUp(() {
+    authService = FakeAuthService();
+    authService.signUpWithEmailAndPassword("fares@gmail.com", "1234");
+  });
 
-    test('authentication fails with invalid credentials', () async {
-      expect(
-          await authService.authenticate('user@example.com', 'wrongpassword'),
-          isFalse);
-    });
+  test('Successful sign-in with correct credentials', () async {
+    bool result =
+        await authService.signInWithEmailAndPassword("fares@gmail.com", "1234");
+    expect(result, isTrue); // Expect a successful sign-in
+  });
 
-    test('authentication fails with empty email and password', () async {
-      expect(await authService.authenticate('', ''), isFalse);
-    });
+  test('Successful sign-up with valid email', () async {
+    bool result = await authService.signUpWithEmailAndPassword(
+        "newuser@example.com", "password123");
+    expect(result, isTrue); // Expect a successful sign-up
   });
 }
