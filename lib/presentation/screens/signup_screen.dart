@@ -200,14 +200,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
     String email = _emailController.text;
     String password = _passwordController.text;
 
-    _auth.signUpWithEmailAndPassword(email, password);
+    if (email.isNotEmpty && password.isNotEmpty && agreeToTerms) {
+      _auth.signUpWithEmailAndPassword(email, password);
 
-    try {
-      showToast(message: "User is successfully created");
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const SignInScreen()));
-    } catch (e) {
-      showToast(message: "Error signing up: $e");
+      try {
+        showToast(message: "User is successfully created");
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const SignInScreen()));
+      } catch (e) {
+        showToast(message: "Error signing up: $e");
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Sign Up Error'),
+            content: const Text('Empty email or password'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 }

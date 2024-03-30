@@ -207,17 +207,38 @@ class _SignInScreenState extends State<SignInScreen> {
     String email = _emailController.text;
     String password = _passwordController.text;
 
-    _auth.signInWithEmailAndPassword(email, password);
+    if (email.isNotEmpty && password.isNotEmpty) {
+      _auth.signInWithEmailAndPassword(email, password);
 
-    try {
-      showToast(message: "User is successfully signed in!");
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => MyHomePage(getAudioDevices: getAudioDevices)),
+      try {
+        showToast(message: "User is successfully signed in!");
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  MyHomePage(getAudioDevices: getAudioDevices)),
+        );
+      } catch (e) {
+        showToast(message: "Error signing in: $e");
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Sign In Error'),
+            content: const Text('Empty email or password'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
       );
-    } catch (e) {
-      showToast(message: "Error signing in: $e");
     }
   }
 }

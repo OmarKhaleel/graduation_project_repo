@@ -202,6 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
           ],
+          automaticallyImplyLeading: false,
         ),
         backgroundColor: const Color(0xFF00916E),
         body: _buildPageContent(),
