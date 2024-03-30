@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/firebase_auth_services.dart';
+import 'package:palmear_application/data/services/signup_service.dart';
 import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
-import 'package:palmear_application/presentation/screens/signin_screen.dart';
-import 'package:palmear_application/presentation/widgets/toast.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -173,7 +172,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 ElevatedButton(
-                  onPressed: _signUp,
+                  onPressed: () {
+                    signUp(context, _emailController.text,
+                        _passwordController.text, agreeToTerms, _auth);
+                  },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
                       getButtonColor(),
@@ -194,40 +196,5 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ],
       ),
     );
-  }
-
-  void _signUp() {
-    String email = _emailController.text;
-    String password = _passwordController.text;
-
-    if (email.isNotEmpty && password.isNotEmpty && agreeToTerms) {
-      _auth.signUpWithEmailAndPassword(email, password);
-
-      try {
-        showToast(message: "User is successfully created");
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const SignInScreen()));
-      } catch (e) {
-        showToast(message: "Error signing up: $e");
-      }
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Sign Up Error'),
-            content: const Text('Empty email or password'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
   }
 }

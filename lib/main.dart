@@ -1,11 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
-import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
-import 'package:palmear_application/presentation/screens/home_screen.dart';
-import 'package:palmear_application/presentation/screens/signin_screen.dart';
+import 'package:palmear_application/data/services/authentication_wrapper.dart';
+import 'package:palmear_application/theme/app_theme.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,56 +26,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFFFFFFF),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.white,
-          selectedItemColor: Color(0xFF00916E),
-          unselectedItemColor: Colors.grey,
-        ),
-        textTheme: const TextTheme(
-          // Setting default text color to be black
-          labelLarge: TextStyle(color: Colors.black),
-          displayLarge: TextStyle(color: Colors.black),
-          displayMedium: TextStyle(color: Colors.black),
-          displaySmall: TextStyle(color: Colors.black),
-          headlineMedium: TextStyle(color: Colors.black),
-          headlineSmall: TextStyle(color: Colors.black),
-          titleLarge: TextStyle(color: Colors.black),
-          titleMedium: TextStyle(color: Colors.black),
-          titleSmall: TextStyle(color: Colors.black),
-          bodySmall: TextStyle(color: Colors.black),
-          labelSmall: TextStyle(color: Colors.black),
-        ),
-      ),
+      theme: AppTheme.lightTheme(),
       home: const AuthenticationWrapper(),
       debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class AuthenticationWrapper extends StatelessWidget {
-  const AuthenticationWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final audioDeviceRepository = AudioDeviceRepositoryImpl();
-    final getAudioDevices = GetAudioDevices(audioDeviceRepository);
-
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else {
-          if (snapshot.hasData) {
-            return MyHomePage(getAudioDevices: getAudioDevices);
-          } else {
-            return const SignInScreen();
-          }
-        }
-      },
     );
   }
 }

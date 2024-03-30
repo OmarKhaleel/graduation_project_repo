@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/firebase_auth_services.dart';
+import 'package:palmear_application/data/services/signin_service.dart';
 import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
-import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:palmear_application/presentation/screens/signup_screen.dart';
-import 'package:palmear_application/presentation/widgets/toast.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -162,7 +161,10 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 ElevatedButton(
-                  onPressed: _signIn,
+                  onPressed: () {
+                    signIn(context, _emailController.text,
+                        _passwordController.text, _auth, getAudioDevices);
+                  },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
                       getButtonColor(),
@@ -201,44 +203,5 @@ class _SignInScreenState extends State<SignInScreen> {
         ],
       ),
     );
-  }
-
-  void _signIn() {
-    String email = _emailController.text;
-    String password = _passwordController.text;
-
-    if (email.isNotEmpty && password.isNotEmpty) {
-      _auth.signInWithEmailAndPassword(email, password);
-
-      try {
-        showToast(message: "User is successfully signed in!");
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  MyHomePage(getAudioDevices: getAudioDevices)),
-        );
-      } catch (e) {
-        showToast(message: "Error signing in: $e");
-      }
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Sign In Error'),
-            content: const Text('Empty email or password'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
   }
 }
