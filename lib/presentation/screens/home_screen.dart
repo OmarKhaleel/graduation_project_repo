@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
+import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
-import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
 import 'package:palmear_application/presentation/widgets/bottom_navigation_bar.dart';
 import 'map_screen.dart';
 import 'settings_screen.dart';
+import 'dart:io' show Platform;
 
 class MyHomePage extends StatefulWidget {
-  final GetAudioDevices? getAudioDevices;
-
-  const MyHomePage({super.key, required this.getAudioDevices});
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -24,7 +23,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isPalmearAudioAmplifierConnected = false;
   List<AudioDeviceInfo> _audioDevices = [];
 
-  final audioDeviceRepository = AudioDeviceRepositoryImpl();
+  bool isTesting = Platform.environment.containsKey('FLUTTER_TEST');
 
   @override
   void initState() {
@@ -34,7 +33,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _getAudioDevices() async {
     try {
-      final devices = await widget.getAudioDevices!.call();
+      final audioDeviceRepository =
+          isTesting ? TestAudioDeviceRepository() : AudioDeviceRepositoryImpl();
+      final devices = await audioDeviceRepository.getAudioDevices();
       final deviceMap = <String, AudioDeviceInfo>{};
 
       for (final device in devices) {

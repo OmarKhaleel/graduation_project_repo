@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/firebase_auth_services.dart';
 import 'package:palmear_application/data/services/signup_service.dart';
-import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -13,19 +11,12 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   bool agreeToTerms = false;
-  late GetAudioDevices getAudioDevices;
 
   final FirebaseAuthService _auth = FirebaseAuthService();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final audioDeviceRepository = AudioDeviceRepositoryImpl();
-    getAudioDevices = GetAudioDevices(audioDeviceRepository);
-  }
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -49,6 +40,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void setAgreeToTerms(bool? value) {
     setState(() {
       agreeToTerms = value ?? false;
+    });
+  }
+
+  void setErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
     });
   }
 
@@ -171,10 +168,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(_errorMessage,
+                        style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14)), // Display the error message
+                  ),
                 ElevatedButton(
                   onPressed: () {
-                    signUp(context, _emailController.text,
-                        _passwordController.text, agreeToTerms, _auth);
+                    signUp(
+                        context,
+                        _emailController.text.trim(),
+                        _passwordController.text.trim(),
+                        agreeToTerms,
+                        _auth,
+                        setErrorMessage);
                   },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(

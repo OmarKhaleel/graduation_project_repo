@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/services/firebase_auth_services.dart';
-import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
 import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:palmear_application/presentation/widgets/toast.dart';
 
 void signIn(BuildContext context, String email, String password,
-    FirebaseAuthService auth, GetAudioDevices getAudioDevices) {
+    FirebaseAuthService auth) {
   if (email.isNotEmpty && password.isNotEmpty) {
     auth.signInWithEmailAndPassword(email, password);
 
@@ -13,8 +12,7 @@ void signIn(BuildContext context, String email, String password,
       showToast(message: "User is successfully signed in!");
       Navigator.push(
         context,
-        MaterialPageRoute(
-            builder: (context) => MyHomePage(getAudioDevices: getAudioDevices)),
+        MaterialPageRoute(builder: (context) => const MyHomePage()),
       );
     } catch (e) {
       showToast(message: "Error signing in: $e");

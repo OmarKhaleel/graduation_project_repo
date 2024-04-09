@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/firebase_auth_services.dart';
 import 'package:palmear_application/data/services/signin_service.dart';
-import 'package:palmear_application/domain/use_cases/get_audio_devices.dart';
 import 'package:palmear_application/presentation/screens/signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -13,8 +11,6 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  late GetAudioDevices getAudioDevices;
-
   final FirebaseAuthService _auth = FirebaseAuthService();
 
   final TextEditingController _emailController = TextEditingController();
@@ -25,13 +21,6 @@ class _SignInScreenState extends State<SignInScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final audioDeviceRepository = AudioDeviceRepositoryImpl();
-    getAudioDevices = GetAudioDevices(audioDeviceRepository);
   }
 
   void setEmail(String value) {
@@ -163,7 +152,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ElevatedButton(
                   onPressed: () {
                     signIn(context, _emailController.text,
-                        _passwordController.text, _auth, getAudioDevices);
+                        _passwordController.text, _auth);
                   },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
