@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/services/authentication_wrapper.dart';
+import 'package:palmear_application/data/services/firebase_services/authentication_wrapper.dart';
 import 'package:palmear_application/theme/app_theme.dart';
 
 Future main() async {

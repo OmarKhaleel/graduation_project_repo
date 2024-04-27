@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/services/firebase_auth_services.dart';
-import 'package:palmear_application/data/services/signup_service.dart';
+import 'package:palmear_application/data/services/firebase_services/firebase_auth_services.dart';
+import 'package:palmear_application/data/services/firebase_services/signup_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palmear_application/data/services/firebase_auth_services.dart';
-import 'package:palmear_application/data/services/signin_service.dart';
+import 'package:palmear_application/data/services/firebase_services/firebase_auth_services.dart';
+import 'package:palmear_application/data/services/firebase_services/signin_service.dart';
 import 'package:palmear_application/presentation/screens/signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -151,8 +151,12 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 ElevatedButton(
                   onPressed: () {
-                    signIn(context, _emailController.text,
-                        _passwordController.text, _auth);
+                    signIn(
+                      context,
+                      _emailController.text,
+                      _passwordController.text,
+                      _auth,
+                    );
                   },
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
