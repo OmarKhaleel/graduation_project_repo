@@ -9,12 +9,25 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Settings Screen'),
-            GestureDetector(
+      backgroundColor: const Color(0xFFF2F0EE),
+      body: ListView(
+        children: ListTile.divideTiles(
+          context: context,
+          tiles: [
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0, top: 28.0, bottom: 8.0),
+              child: Text(
+                "ACCOUNT",
+                style: TextStyle(
+                    color: Color(0xFFB0AFB0), fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              trailing: const Icon(Icons.logout),
+              tileColor: Colors.white,
+              title: const Text('Logout'),
+              textColor: Colors.red,
+              iconColor: Colors.red,
               onTap: () {
                 FirebaseAuth.instance.signOut();
                 Navigator.pushReplacement(
@@ -23,25 +36,9 @@ class SettingsScreen extends StatelessWidget {
                         builder: (context) => const SignInScreen()));
                 showToast(message: "Successfully signed out");
               },
-              child: Container(
-                height: 45,
-                width: 100,
-                decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(10)),
-                child: const Center(
-                  child: Text(
-                    "Sign out",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18),
-                  ),
-                ),
-              ),
             ),
           ],
-        ),
+        ).toList(),
       ),
     );
   }

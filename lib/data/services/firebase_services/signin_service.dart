@@ -25,12 +25,10 @@ Future<void> signIn(BuildContext context, String email, String password,
     showToast(message: "User is successfully signed in!");
 
     // Proceed to navigate to the home screen
-    if (context.mounted) {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const MyHomePage()));
-    } else {
-      showToast(message: "Failed to retrieve user data.");
-    }
+    Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(builder: (context) => const MyHomePage()));
   } else {
     showToast(message: "Failed to sign in.");
   }

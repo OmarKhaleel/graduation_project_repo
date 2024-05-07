@@ -12,11 +12,10 @@ class UserRepository {
   }
 
   Future<UserModel?> getUser(String uid) async {
-    DocumentSnapshot snapshot =
+    DocumentSnapshot<Map<String, dynamic>> snapshot =
         await firestore.collection('users').doc(uid).get();
-    if (snapshot.exists) {
-      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-      return UserModel.fromJson(data);
+    if (snapshot.exists && snapshot.data() != null) {
+      return UserModel.fromJson(snapshot.data()!);
     }
     return null;
   }

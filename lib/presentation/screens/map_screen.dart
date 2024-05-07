@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:palmear_application/domain/entities/user_model.dart';
-import 'package:palmear_application/data/repositories/user_repository.dart';
+import 'package:palmear_application/data/repositories/farm_repository.dart';
+import 'package:palmear_application/data/repositories/tree_repository.dart';
 import 'package:palmear_application/data/services/user_session/user_session.dart';
+import 'package:palmear_application/domain/entities/tree_model.dart';
+import 'package:palmear_application/domain/use_cases/marker_builder.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -12,54 +17,76 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  late ClusterManager _manager;
+  final Completer<GoogleMapController> _controller = Completer();
   CameraPosition? initialCameraPosition;
   bool isLoading = true; // To handle loading state
-  final Set<Marker> _markers = {};
-  late List<LatLng> _polygonPoints;
+  final List<TreeModel> treesList = [];
+  late Set<Marker> markers = {};
+  final Set<Polygon> _polygons = {};
+  final List<LatLng> _polygonPoints = [];
 
   @override
   void initState() {
     super.initState();
-    setUserLocation();
+    _setFarmLocations();
+    _manager = _initClusterManager();
   }
 
-  Future<void> setUserLocation() async {
-    UserModel? sessionUser = UserSession().getUser();
+  Future<void> _setFarmLocations() async {
+    var sessionUser = UserSession().getUser();
     if (sessionUser != null) {
-      UserModel? user = await UserRepository().getUser(sessionUser.uid);
-      if (user != null && user.locations.isNotEmpty) {
-        double totalLat = 0;
-        double totalLng = 0;
-        for (LatLng point in user.locations) {
-          totalLat += point.latitude;
-          totalLng += point.longitude;
+      var farmRepository = FarmRepository(userId: sessionUser.uid);
+      var farms = await farmRepository
+          .getFarms(); // This method needs to be implemented in FarmRepository
+      if (farms.isNotEmpty) {
+        for (var farm in farms) {
+          _polygonPoints.addAll(farm.locations);
+          var treeRepository =
+              TreeRepository(userId: sessionUser.uid, farmId: farm.uid);
+          var trees = await treeRepository.getTrees();
+          if (trees.isNotEmpty) {
+            for (var tree in trees) {
+              treesList.add(tree);
+            }
+          }
         }
-        double centroidLat = totalLat / user.locations.length;
-        double centroidLng = totalLng / user.locations.length;
-
-        // Set the first location from the list
+        // Assuming the centroid or any point for the initial camera position
         initialCameraPosition = CameraPosition(
-          target: LatLng(centroidLat, centroidLng),
+          target: _polygonPoints.first,
           zoom: 17,
         );
-        Marker userFarmLocationMarker = Marker(
-          markerId: const MarkerId("_userFarmLocationMarker"),
-          infoWindow: const InfoWindow(title: "Your Farm's Location"),
-          icon: BitmapDescriptor.defaultMarker,
-          position: LatLng(centroidLat, centroidLng),
-        );
-        _markers.add(userFarmLocationMarker);
-        _polygonPoints = user.locations;
+
+        _polygons.add(Polygon(
+          polygonId: const PolygonId("farmPolygon"),
+          points: _polygonPoints,
+          fillColor: const Color(0xFF00916E).withOpacity(0.80),
+          strokeWidth: 2,
+        ));
       } else {
-        // Default location if user or user location is not found
+        // Default location if no farms are found
         initialCameraPosition = const CameraPosition(
           target: LatLng(31.99514837693595, 35.879547964711016),
           zoom: 18,
         );
       }
-      isLoading = false; // Set loading to false after location is set
+      isLoading = false;
       setState(() {});
     }
+  }
+
+  ClusterManager _initClusterManager() {
+    return ClusterManager<TreeModel>(
+      treesList,
+      _updateMarkers,
+      markerBuilder: markerBuilder(_controller),
+    );
+  }
+
+  void _updateMarkers(Set<Marker> markers) {
+    setState(() {
+      this.markers = markers;
+    });
   }
 
   @override
@@ -67,19 +94,18 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: !isLoading
           ? GoogleMap(
-              markers: _markers,
-              polygons: {
-                Polygon(
-                  polygonId: const PolygonId("1"),
-                  points: _polygonPoints,
-                  fillColor: const Color(0xFF00916E).withOpacity(0.80),
-                  strokeWidth: 2,
-                ),
-              },
+              mapType: MapType.normal,
+              markers: markers,
+              polygons: _polygons,
               myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
+              zoomControlsEnabled: true,
               initialCameraPosition: initialCameraPosition!,
-            )
+              onMapCreated: (GoogleMapController controller) {
+                _controller.complete(controller);
+                _manager.setMapId(controller.mapId);
+              },
+              onCameraMove: _manager.onCameraMove,
+              onCameraIdle: _manager.updateMap)
           : const Center(child: CircularProgressIndicator()),
     );
   }
