@@ -14,22 +14,31 @@ Future<void> signIn(BuildContext context, String email, String password,
     return;
   }
 
-  User? user =
-      (await auth.signInWithEmailAndPassword(email, password)) as User?;
-  if (user != null) {
-    UserRepository userRepository = UserRepository();
-    UserModel? userModel = await userRepository.getUser(user.uid);
+  try {
+    User? user =
+        await auth.signInWithEmailAndPassword(email, password) as User?;
 
-    // Set user in the singleton UserSession
-    UserSession().setUser(userModel!);
-    showToast(message: "User is successfully signed in!");
+    if (user != null) {
+      UserRepository userRepository = UserRepository();
+      UserModel? userModel = await userRepository.getUser(user.uid);
 
-    // Proceed to navigate to the home screen
-    Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(builder: (context) => const MyHomePage()));
-  } else {
-    showToast(message: "Failed to sign in.");
+      if (userModel != null) {
+        // Set user in the singleton UserSession
+        UserSession().setUser(userModel);
+        showToast(message: "User is successfully signed in!");
+
+        // Proceed to navigate to the home screen
+        if (context.mounted) {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const MyHomePage()));
+        }
+      } else {
+        showToast(message: "Failed to retrieve user data.");
+      }
+    } else {
+      showToast(message: "Failed to sign in.");
+    }
+  } catch (e) {
+    showToast(message: "Error signing in: $e");
   }
 }

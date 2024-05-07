@@ -1,6 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:palmear_application/presentation/screens/signin_screen.dart';
+import 'package:palmear_application/data/services/firebase_services/signout_service.dart';
 import 'package:palmear_application/presentation/widgets/toast.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -29,12 +28,9 @@ class SettingsScreen extends StatelessWidget {
               textColor: Colors.red,
               iconColor: Colors.red,
               onTap: () {
-                FirebaseAuth.instance.signOut();
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SignInScreen()));
-                showToast(message: "Successfully signed out");
+                signOut(context).then((_) {
+                  showToast(message: "Successfully signed out");
+                });
               },
             ),
           ],
