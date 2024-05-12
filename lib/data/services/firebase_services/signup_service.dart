@@ -55,6 +55,7 @@ Future<void> signUp(
           uid: FirebaseFirestore.instance.collection('farms').doc().id,
           name: 'Default Farm',
           locations: [
+            // Test Map:
             const LatLng(31.991549, 35.878889),
             const LatLng(31.991896, 35.878791),
             const LatLng(31.992410, 35.878612),

@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:palmear_application/presentation/widgets/toast.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;

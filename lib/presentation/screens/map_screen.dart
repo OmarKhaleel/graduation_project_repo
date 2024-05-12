@@ -5,9 +5,12 @@ import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:palmear_application/data/repositories/farm_repository.dart';
 import 'package:palmear_application/data/repositories/tree_repository.dart';
-import 'package:palmear_application/data/services/user_session/user_session.dart';
+import 'package:palmear_application/data/services/user_services/user_session.dart';
+import 'package:palmear_application/domain/entities/farm_model.dart';
 import 'package:palmear_application/domain/entities/tree_model.dart';
-import 'package:palmear_application/domain/use_cases/marker_builder.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/calculate_centroid.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/marker_builder.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/update_camera_bounds.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -22,9 +25,10 @@ class _MapScreenState extends State<MapScreen> {
   CameraPosition? initialCameraPosition;
   bool isLoading = true; // To handle loading state
   final List<TreeModel> treesList = [];
-  late Set<Marker> markers = {};
+  late Set<Marker> _markers = {};
   final Set<Polygon> _polygons = {};
   final List<LatLng> _polygonPoints = [];
+  late StreamSubscription<List<FarmModel>> _farmSubscription; // Declared here
 
   @override
   void initState() {
@@ -37,41 +41,66 @@ class _MapScreenState extends State<MapScreen> {
     var sessionUser = UserSession().getUser();
     if (sessionUser != null) {
       var farmRepository = FarmRepository(userId: sessionUser.uid);
-      var farms = await farmRepository
-          .getFarms(); // This method needs to be implemented in FarmRepository
-      if (farms.isNotEmpty) {
-        for (var farm in farms) {
-          _polygonPoints.addAll(farm.locations);
-          var treeRepository =
-              TreeRepository(userId: sessionUser.uid, farmId: farm.uid);
-          var trees = await treeRepository.getTrees();
-          if (trees.isNotEmpty) {
-            for (var tree in trees) {
-              treesList.add(tree);
-            }
+      _farmSubscription = farmRepository.getFarmsStream().listen((farms) async {
+        List<LatLng> updatedPolygonPoints = [];
+        List<TreeModel> updatedTreesList = [];
+
+        if (farms.isNotEmpty) {
+          for (var farm in farms) {
+            updatedPolygonPoints.addAll(farm.locations);
+            var treeRepository =
+                TreeRepository(userId: sessionUser.uid, farmId: farm.uid);
+            List<TreeModel> trees = await treeRepository.getTrees();
+            updatedTreesList.addAll(trees);
+          }
+
+          if (mounted) {
+            setState(() {
+              _polygonPoints.clear();
+              _polygonPoints.addAll(updatedPolygonPoints);
+              treesList.clear();
+              treesList
+                  .addAll(updatedTreesList); // Update trees list for clustering
+
+              // Calculate the centroid of the polygon
+              LatLng centroid = calculateCentroid(_polygonPoints);
+
+              initialCameraPosition = CameraPosition(
+                target: centroid,
+                zoom: 6,
+              );
+
+              _polygons.clear();
+              _polygons.add(Polygon(
+                polygonId: const PolygonId("farmPolygon"),
+                points: _polygonPoints,
+                fillColor: const Color(0xFF00916E).withOpacity(0.80),
+                strokeWidth: 2,
+              ));
+
+              // Later adjust the zoom to fit the polygon
+              _controller.future.then((controller) {
+                updateCameraBounds(controller, _polygonPoints);
+              });
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              initialCameraPosition = const CameraPosition(
+                target: LatLng(31.99514837693595, 35.879547964711016),
+                zoom: 18,
+              );
+              _polygonPoints.clear();
+              treesList.clear();
+            });
           }
         }
-        // Assuming the centroid or any point for the initial camera position
-        initialCameraPosition = CameraPosition(
-          target: _polygonPoints.first,
-          zoom: 17,
-        );
-
-        _polygons.add(Polygon(
-          polygonId: const PolygonId("farmPolygon"),
-          points: _polygonPoints,
-          fillColor: const Color(0xFF00916E).withOpacity(0.80),
-          strokeWidth: 2,
-        ));
-      } else {
-        // Default location if no farms are found
-        initialCameraPosition = const CameraPosition(
-          target: LatLng(31.99514837693595, 35.879547964711016),
-          zoom: 18,
-        );
-      }
-      isLoading = false;
-      setState(() {});
+        isLoading = false;
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -84,9 +113,18 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _updateMarkers(Set<Marker> markers) {
-    setState(() {
-      this.markers = markers;
-    });
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.future.then((controller) => controller.dispose());
+    _farmSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -95,7 +133,7 @@ class _MapScreenState extends State<MapScreen> {
       body: !isLoading
           ? GoogleMap(
               mapType: MapType.normal,
-              markers: markers,
+              markers: _markers,
               polygons: _polygons,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: true,
@@ -105,7 +143,8 @@ class _MapScreenState extends State<MapScreen> {
                 _manager.setMapId(controller.mapId);
               },
               onCameraMove: _manager.onCameraMove,
-              onCameraIdle: _manager.updateMap)
+              onCameraIdle: _manager.updateMap,
+            )
           : const Center(child: CircularProgressIndicator()),
     );
   }

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/services/firebase_services/firebase_auth_services.dart';
+import 'package:palmear_application/data/services/firestore_services/sync_manager.dart';
 import 'package:palmear_application/domain/entities/user_model.dart';
 import 'package:palmear_application/data/repositories/user_repository.dart';
-import 'package:palmear_application/data/services/user_session/user_session.dart';
-import 'package:palmear_application/presentation/widgets/toast.dart';
+import 'package:palmear_application/data/services/user_services/user_session.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> signIn(BuildContext context, String email, String password,
-    FirebaseAuthService auth) async {
+    FirebaseAuthService auth, SyncManager syncManager) async {
   if (email.isEmpty || password.isEmpty) {
     showToast(message: "Email or password cannot be empty.");
     return;
@@ -25,6 +26,7 @@ Future<void> signIn(BuildContext context, String email, String password,
       if (userModel != null) {
         // Set user in the singleton UserSession
         UserSession().setUser(userModel);
+        await syncManager.syncFromFirestore(user.uid);
         showToast(message: "User is successfully signed in!");
 
         // Proceed to navigate to the home screen

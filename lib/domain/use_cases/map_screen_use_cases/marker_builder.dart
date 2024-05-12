@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:palmear_application/domain/entities/tree_model.dart';
-import 'package:palmear_application/domain/use_cases/center_and_zoom_in.dart';
-import 'package:palmear_application/domain/use_cases/marker_bitmap.dart';
-import 'package:palmear_application/domain/use_cases/pie_chart_marker_bitmap.dart';
-import 'package:palmear_application/domain/use_cases/zoom_into_cluster.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/center_and_zoom_in.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/marker_bitmap.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/pie_chart_marker_bitmap.dart';
+import 'package:palmear_application/domain/use_cases/map_screen_use_cases/zoom_into_cluster.dart';
 
 Future<Marker> Function(Cluster<TreeModel>) markerBuilder(
         Completer<GoogleMapController> controller) =>

@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/services/firebase_services/firebase_auth_services.dart';
-import 'package:palmear_application/data/services/firebase_services/signup_service.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/back_arrow.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/email_label.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/email_textfield.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/enter_credentials_text.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/password_label.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/password_textfield.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/top_green_half_circle.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/welcome_to_palmear_text.dart';
+import 'package:palmear_application/presentation/widgets/signup_screen_widgets/agree_to_terms_checkbox.dart';
+import 'package:palmear_application/presentation/widgets/signup_screen_widgets/error_message_text.dart';
+import 'package:palmear_application/presentation/widgets/signup_screen_widgets/signup_button.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -10,7 +20,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  bool agreeToTerms = false;
+  bool _agreeToTerms = false;
 
   final FirebaseAuthService _auth = FirebaseAuthService();
 
@@ -25,38 +35,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void setEmail(String value) {
+  void _setEmail(String value) {
     setState(() {
       _emailController.text = value;
     });
   }
 
-  void setPassword(String value) {
+  void _setPassword(String value) {
     setState(() {
       _passwordController.text = value;
     });
   }
 
-  void setAgreeToTerms(bool? value) {
+  void _setAgreeToTerms(bool? value) {
     setState(() {
-      agreeToTerms = value ?? false;
+      _agreeToTerms = value ?? false;
     });
   }
 
-  void setErrorMessage(String message) {
+  void _setErrorMessage(String message) {
     setState(() {
       _errorMessage = message;
     });
-  }
-
-  Color getButtonColor() {
-    if (_emailController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty &&
-        agreeToTerms) {
-      return const Color(0xFF00916E);
-    } else {
-      return const Color(0xFF66BEA8);
-    }
   }
 
   @override
@@ -64,145 +64,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned(
-            top: -MediaQuery.of(context).size.width * 1.1,
-            left: -MediaQuery.of(context).size.width * 0.5,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 2,
-              height: MediaQuery.of(context).size.width * 1.5,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF00916E),
-              ),
-            ),
-          ),
+          const TopGreenHalfCircle(),
           SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                const Text(
-                  'Welcome to Palmear',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                const WelcomeToPalmearText(),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-                const Text(
-                  'Please enter your credentials',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13.0, fontWeight: FontWeight.bold),
+                const EnterCredentialsText(),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                const EmailLabel(),
+                const SizedBox(height: 5.0),
+                EmailTextField(
+                  controller: _emailController,
+                  onChanged: _setEmail,
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Email',
-                      style: TextStyle(
-                          fontSize: 13.0, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 5.0),
-                    TextFormField(
-                      key: const Key('email_field'),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF00916E)),
-                        ),
-                        hintText: 'Enter your email',
-                      ),
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      onChanged: setEmail,
-                    ),
-                  ],
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Password',
-                      style: TextStyle(
-                          fontSize: 13.0, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 5.0),
-                    TextFormField(
-                      key: const Key('password_field'),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF00916E)),
-                        ),
-                        hintText: 'Enter your password',
-                      ),
-                      controller: _passwordController,
-                      obscureText: true,
-                      onChanged: setPassword,
-                    ),
-                  ],
+                const PasswordLabel(),
+                const SizedBox(height: 5.0),
+                PasswordTextField(
+                  controller: _passwordController,
+                  onChanged: _setPassword,
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: agreeToTerms,
-                      onChanged: setAgreeToTerms,
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // Implement Privacy Policy and Terms & Conditions here
-                      },
-                      child: const Text(
-                        'I agree to the Privacy policy and Terms & conditions',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.blue,
-                          fontSize: 12.0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                AgreeToTermsCheckbox(
+                    agreeToTerms: _agreeToTerms, onChanged: _setAgreeToTerms),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 if (_errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(_errorMessage,
-                        style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 14)), // Display the error message
-                  ),
-                ElevatedButton(
-                  onPressed: () {
-                    signUp(
-                        context,
-                        _emailController.text.trim(),
-                        _passwordController.text.trim(),
-                        agreeToTerms,
-                        _auth,
-                        setErrorMessage);
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                      getButtonColor(),
-                    ),
-                    foregroundColor:
-                        MaterialStateProperty.all<Color>(Colors.white),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  child: const Text('Sign Up'),
+                  ErrorMessageText(errorMessage: _errorMessage),
+                SignUpButton(
+                  context: context,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  agreeToTerms: _agreeToTerms,
+                  auth: _auth,
+                  setErrorMessage: _setErrorMessage,
                 ),
               ],
             ),
           ),
+          const BackArrow(),
         ],
       ),
     );
