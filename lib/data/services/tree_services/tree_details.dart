@@ -40,7 +40,6 @@ class TreeDetails {
       try {
         await _dbHelper.updateTreeLabel(treeid, label);
         showToast(message: "Tree label updated successfully");
-
         try {
           var connectivityResult = await Connectivity().checkConnectivity();
           // ignore: unrelated_type_equality_checks

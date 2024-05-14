@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 import 'dart:async';
@@ -38,7 +39,6 @@ class SyncManager {
             treeMap['uid'] = treeDoc.id;
             treeMap['farm_id'] = farmDoc.id;
             treeMap['isModified'] = 0;
-            // Split location map into latitude and longitude
             if (treeMap.containsKey('location')) {
               var location = treeMap['location'];
               treeMap['latitude'] = location['latitude'];
@@ -106,25 +106,42 @@ class SyncManager {
       for (var tree in localTrees) {
         var farm = await _dbHelper.getFarm(tree['farm_id']);
         if (farm != null) {
-          // Converting farm_id and user_id to String for Firestore
           var userRef =
-              _firestore.collection('users').doc(farm['user_id'].toString());
-          var farmRef = userRef.collection('farms').doc(farm['uid']);
-          var treeRef = farmRef.collection('trees').doc(tree['uid']);
+              _firestore.collection('users').doc(farm['user_id'] as String);
+          var farmRef =
+              userRef.collection('farms').doc(tree['farm_id'] as String);
+          var treeRef = farmRef.collection('trees').doc(tree['uid'] as String);
 
-          var treeData = Map<String, dynamic>.from(tree)
-            ..removeWhere((key, value) => key == 'isModified' || key == 'id')
-            ..['latitude'] = tree['latitude']
-            ..['longitude'] = tree['longitude'];
+          var snapshot = await treeRef.get();
+          Map<String, dynamic> locationMap = {
+            'latitude': tree['latitude'],
+            'longitude': tree['longitude']
+          };
 
-          await treeRef.set(treeData, SetOptions(merge: true));
-          await _dbHelper.markAsUnmodified("trees", tree['uid']);
+          if (snapshot.exists) {
+            var treeData = {'label': tree['label']};
+            await treeRef.update(treeData);
+            debugPrint("Updated tree label for: ${tree['uid']}");
+          } else {
+            var treeData = Map<String, dynamic>.from(tree)
+              ..removeWhere((key, value) =>
+                  key == 'isModified' ||
+                  key == 'id' ||
+                  key == 'latitude' ||
+                  key == 'longitude' ||
+                  key == 'farm_id')
+              ..['location'] = locationMap;
+            await treeRef.set(treeData);
+            debugPrint("Added new tree: ${tree['uid']}");
+          }
+          await _dbHelper.markAsUnmodified("trees", tree['uid'] as String);
         } else {
           showToast(message: "No matching farm found for tree: ${tree['uid']}");
         }
       }
     } catch (e) {
       showToast(message: "Error syncing trees to Firestore: $e");
+      debugPrint("Error syncing trees to Firestore: $e");
     }
   }
 
@@ -133,9 +150,5 @@ class SyncManager {
       var latLng = s.split(',');
       return GeoPoint(double.parse(latLng[0]), double.parse(latLng[1]));
     }).toList();
-  }
-
-  Future<Map<String, dynamic>?> getFarm(int farmId) async {
-    return await _dbHelper.getFarm(farmId);
   }
 }

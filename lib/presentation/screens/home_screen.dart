@@ -7,6 +7,7 @@ import 'package:palmear_application/data/repositories/farm_repository.dart';
 import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/data/repositories/tree_repository.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
+import 'package:palmear_application/data/services/user_services/audio_services.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
 import 'package:palmear_application/domain/entities/farm_model.dart';
@@ -43,6 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late Position _currentLocation;
   bool _isUserInsideFarmValue = false;
   FarmModel? _selectedFarm;
+  final AudioProcessor _audioProcessor = AudioProcessor();
 
   // Test for live location
   double lat = 0;
@@ -53,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _getAudioDevices();
     _checkPermission();
+    _isUserInsideFarmChecker();
   }
 
   void _onItemTapped(int index) {
@@ -98,24 +101,30 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void startCountdown() {
-    const oneSec = Duration(seconds: 1);
-    timer = Timer.periodic(
-      oneSec,
-      (Timer timer) {
-        setState(() {
-          if (_countdown < 1) {
-            timer.cancel();
-            _isListening = false;
-            _countdown = 50;
-            stopScan();
-            _isUserInsideFarmOperations();
-          } else {
-            _countdown--;
-          }
-        });
-      },
-    );
+  void startCountdown() async {
+    if (await _audioProcessor.requestMicrophonePermission()) {
+      _audioProcessor.startStreaming();
+      const oneSec = Duration(seconds: 1);
+      timer = Timer.periodic(
+        oneSec,
+        (Timer timer) {
+          setState(() {
+            if (_countdown < 1) {
+              timer.cancel();
+              _isListening = false;
+              _countdown = 50;
+              _audioProcessor.stopStreaming();
+              stopScan();
+              _isUserInsideFarmOperations();
+            } else {
+              _countdown--;
+            }
+          });
+        },
+      );
+    } else {
+      showToast(message: 'Permission needed for prediction');
+    }
   }
 
   //check if location permission is enable
@@ -156,7 +165,6 @@ class _MyHomePageState extends State<MyHomePage> {
       if (farms.isNotEmpty) {
         _currentLocation = (await _getUserLocation())!;
         for (var farm in farms) {
-          // Is 'currentLocation' inside any of the farms?
           _isUserInsideFarmValue = toolkit.PolygonUtil.containsLocation(
             toolkit.LatLng(
                 _currentLocation.latitude, _currentLocation.longitude),
@@ -179,7 +187,6 @@ class _MyHomePageState extends State<MyHomePage> {
       if (farms.isNotEmpty) {
         _currentLocation = (await _getUserLocation())!;
         for (var farm in farms) {
-          // Is 'currentLocation' inside any of the farms?
           _isUserInsideFarmValue = toolkit.PolygonUtil.containsLocation(
             toolkit.LatLng(
                 _currentLocation.latitude, _currentLocation.longitude),
@@ -222,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 _selectedFarm!.uid,
               );
             } else if (nearestTree != null) {
-              String label = "Infested";
+              String label = "Healthy";
               _treeDetails.updateSelectedTreeLabel(nearestTree.uid, label);
             } else {
               showToast(
@@ -323,6 +330,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       } else {
                         stopScan();
                         timer?.cancel();
+                        _audioProcessor.stopStreaming();
                       }
                     });
                   }

@@ -25,37 +25,37 @@ class DatabaseHelper {
   Future _createDB(Database db, int version) async {
     try {
       await db.execute('''
-        CREATE TABLE users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          uid TEXT NOT NULL UNIQUE,
-          email TEXT NOT NULL,
-          name TEXT NOT NULL,
-          isModified INTEGER NOT NULL DEFAULT 0
-        );
-      ''');
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        uid TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL,
+        name TEXT NOT NULL,
+        isModified INTEGER NOT NULL DEFAULT 0
+      );
+    ''');
       await db.execute('''
-        CREATE TABLE farms (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          uid TEXT NOT NULL UNIQUE,
-          name TEXT NOT NULL,
-          locations TEXT NOT NULL,
-          user_id INTEGER,
-          isModified INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY (user_id) REFERENCES users (id)
-        );
-      ''');
+      CREATE TABLE farms (
+        id TEXT PRIMARY KEY,
+        uid TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        locations TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        isModified INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    ''');
       await db.execute('''
-       CREATE TABLE trees (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          uid TEXT NOT NULL UNIQUE,
-          label TEXT NOT NULL,
-          latitude REAL NOT NULL,
-          longitude REAL NOT NULL,
-          farm_id INTEGER NOT NULL,
-          isModified INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY (farm_id) REFERENCES farms (id)
-        );
-      ''');
+      CREATE TABLE trees (
+        id TEXT PRIMARY KEY,
+        uid TEXT NOT NULL UNIQUE,
+        label TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        farm_id TEXT NOT NULL,
+        isModified INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (farm_id) REFERENCES farms (id)
+      );
+    ''');
     } catch (e) {
       showToast(message: "Failed to create local cache: $e");
     }
@@ -107,10 +107,10 @@ class DatabaseHelper {
     throw Exception('User not found!');
   }
 
-  Future<Map<String, dynamic>?> getFarm(int farmId) async {
+  Future<Map<String, dynamic>?> getFarm(String farmId) async {
     final db = await database;
     List<Map> farms =
-        await db.query('farms', where: 'id = ?', whereArgs: [farmId]);
+        await db.query('farms', where: 'uid = ?', whereArgs: [farmId]);
     if (farms.isNotEmpty) {
       return farms.first as Map<String, dynamic>;
     }
@@ -130,7 +130,7 @@ class DatabaseHelper {
     await db.delete('trees');
   }
 
-  Future<void> updateTreeLabel(String newLabel, String treeId) async {
+  Future<void> updateTreeLabel(String treeId, String newLabel) async {
     final db = await database;
     await db.update('trees', {'label': newLabel, 'isModified': 1},
         where: 'uid = ?', whereArgs: [treeId]);
@@ -148,6 +148,14 @@ class DatabaseHelper {
       'farm_id': farmid,
       'isModified': 1
     });
+  }
+
+  Future<List<String>> getAllTreeIds() async {
+    final db = await database;
+    List<Map<String, dynamic>> result =
+        await db.query('trees', columns: ['uid']);
+    List<String> ids = result.map((map) => map['uid'].toString()).toList();
+    return ids;
   }
 
   Future close() async {

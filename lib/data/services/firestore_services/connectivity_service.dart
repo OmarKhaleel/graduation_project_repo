@@ -8,25 +8,27 @@ class ConnectivityService extends ChangeNotifier {
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final SyncManager _syncManager = SyncManager();
-  final bool _isConnected = false;
-
-  bool get isConnected => _isConnected;
-
   ConnectivityService() {
     initializeConnectivityListener();
   }
+
   void initializeConnectivityListener() {
-    _connectivitySubscription = _connectivity.onConnectivityChanged
-        .listen((List<ConnectivityResult> results) {
-      bool isConnected =
-          results.any((result) => result != ConnectivityResult.none);
-      if (isConnected) {
-        showToast(message: "Device connected to Internet.");
-        _syncManager.syncToFirestore();
-      } else {
-        showToast(message: "No internet connection.");
-      }
-    });
+    try {
+      _connectivitySubscription = _connectivity.onConnectivityChanged
+          .listen((List<ConnectivityResult> results) {
+        bool isConnected =
+            results.any((result) => result != ConnectivityResult.none);
+        debugPrint('Connectivity change detected: $isConnected');
+        if (isConnected) {
+          showToast(message: "Device connected to Internet.");
+          _syncManager.syncToFirestore();
+        } else {
+          showToast(message: "No internet connection.");
+        }
+      });
+    } catch (e) {
+      debugPrint('Failed to set up connectivity listener: $e');
+    }
   }
 
   @override
