@@ -38,6 +38,13 @@ class SyncManager {
             treeMap['uid'] = treeDoc.id;
             treeMap['farm_id'] = farmDoc.id;
             treeMap['isModified'] = 0;
+            // Split location map into latitude and longitude
+            if (treeMap.containsKey('location')) {
+              var location = treeMap['location'];
+              treeMap['latitude'] = location['latitude'];
+              treeMap['longitude'] = location['longitude'];
+              treeMap.remove('location'); // Remove the location map entry
+            }
             await _dbHelper.insertOrUpdateTree(treeMap);
           }
         }
@@ -94,18 +101,30 @@ class SyncManager {
   }
 
   Future<void> syncTreesToFirestore() async {
-    var localTrees = await _dbHelper.getModified("trees");
-    for (var tree in localTrees) {
-      var farmRef = _firestore
-          .collection('users')
-          .doc(tree['farm_id'] as String)
-          .collection('farms')
-          .doc(tree['farm_id'] as String);
-      var treeRef = farmRef.collection('trees').doc(tree['uid'] as String);
-      var treeData = Map<String, dynamic>.from(tree)
-        ..removeWhere((key, value) => key == 'isModified' || key == 'id');
-      await treeRef.set(treeData, SetOptions(merge: true));
-      await _dbHelper.markAsUnmodified("trees", tree['uid'] as String);
+    try {
+      var localTrees = await _dbHelper.getModified("trees");
+      for (var tree in localTrees) {
+        var farm = await _dbHelper.getFarm(tree['farm_id']);
+        if (farm != null) {
+          // Converting farm_id and user_id to String for Firestore
+          var userRef =
+              _firestore.collection('users').doc(farm['user_id'].toString());
+          var farmRef = userRef.collection('farms').doc(farm['uid']);
+          var treeRef = farmRef.collection('trees').doc(tree['uid']);
+
+          var treeData = Map<String, dynamic>.from(tree)
+            ..removeWhere((key, value) => key == 'isModified' || key == 'id')
+            ..['latitude'] = tree['latitude']
+            ..['longitude'] = tree['longitude'];
+
+          await treeRef.set(treeData, SetOptions(merge: true));
+          await _dbHelper.markAsUnmodified("trees", tree['uid']);
+        } else {
+          showToast(message: "No matching farm found for tree: ${tree['uid']}");
+        }
+      }
+    } catch (e) {
+      showToast(message: "Error syncing trees to Firestore: $e");
     }
   }
 
@@ -114,5 +133,9 @@ class SyncManager {
       var latLng = s.split(',');
       return GeoPoint(double.parse(latLng[0]), double.parse(latLng[1]));
     }).toList();
+  }
+
+  Future<Map<String, dynamic>?> getFarm(int farmId) async {
+    return await _dbHelper.getFarm(farmId);
   }
 }

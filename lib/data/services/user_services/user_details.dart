@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:palmear_application/data/services/firestore_services/database_helper.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:palmear_application/data/services/firestore_services/sync_manager.dart';
 
 class UserDetails {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final SyncManager _syncManager = SyncManager();
 
   Future<String> fetchUserName() async {
     var user = FirebaseAuth.instance.currentUser;
@@ -36,12 +36,9 @@ class UserDetails {
         'isModified': 1
       };
       await _dbHelper.updateUser(updateData);
+
       if (hasInternet) {
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .update({'name': newName});
-        await _dbHelper.markAsUnmodified('users', user.uid);
+        await _syncManager.syncUsersToFirestore();
       }
       return true;
     } catch (e) {

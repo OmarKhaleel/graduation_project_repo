@@ -2,6 +2,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
+import 'package:uuid/uuid.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -44,12 +45,13 @@ class DatabaseHelper {
         );
       ''');
       await db.execute('''
-        CREATE TABLE trees (
+       CREATE TABLE trees (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           uid TEXT NOT NULL UNIQUE,
           label TEXT NOT NULL,
-          location TEXT NOT NULL,
-          farm_id INTEGER,
+          latitude REAL NOT NULL,
+          longitude REAL NOT NULL,
+          farm_id INTEGER NOT NULL,
           isModified INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY (farm_id) REFERENCES farms (id)
         );
@@ -105,6 +107,16 @@ class DatabaseHelper {
     throw Exception('User not found!');
   }
 
+  Future<Map<String, dynamic>?> getFarm(int farmId) async {
+    final db = await database;
+    List<Map> farms =
+        await db.query('farms', where: 'id = ?', whereArgs: [farmId]);
+    if (farms.isNotEmpty) {
+      return farms.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   Future<int> updateUser(Map<String, dynamic> userData) async {
     final db = await database;
     return db.update('users', userData,
@@ -116,6 +128,26 @@ class DatabaseHelper {
     await db.delete('users');
     await db.delete('farms');
     await db.delete('trees');
+  }
+
+  Future<void> updateTreeLabel(String newLabel, String treeId) async {
+    final db = await database;
+    await db.update('trees', {'label': newLabel, 'isModified': 1},
+        where: 'uid = ?', whereArgs: [treeId]);
+  }
+
+  Future<void> addTree(
+      String label, double latitude, double longitude, String farmid) async {
+    final db = await database;
+    String newId = const Uuid().v4();
+    await db.insert('trees', {
+      'uid': newId,
+      'label': label,
+      'latitude': latitude,
+      'longitude': longitude,
+      'farm_id': farmid,
+      'isModified': 1
+    });
   }
 
   Future close() async {

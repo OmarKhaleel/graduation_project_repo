@@ -25,23 +25,27 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  void _setEmail(String value) {
+    if (mounted) {
+      setState(() {
+        _emailController.text = value;
+      });
+    }
+  }
+
+  void _setPassword(String value) {
+    if (mounted) {
+      setState(() {
+        _passwordController.text = value;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  void _setEmail(String value) {
-    setState(() {
-      _emailController.text = value;
-    });
-  }
-
-  void _setPassword(String value) {
-    setState(() {
-      _passwordController.text = value;
-    });
   }
 
   @override

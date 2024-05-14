@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -24,6 +25,8 @@ class _MapScreenState extends State<MapScreen> {
   final Completer<GoogleMapController> _controller = Completer();
   CameraPosition? initialCameraPosition;
   bool isLoading = true; // To handle loading state
+  bool hasInternet = true;
+  // late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final List<TreeModel> treesList = [];
   late Set<Marker> _markers = {};
   final Set<Polygon> _polygons = {};
@@ -33,8 +36,15 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     _setFarmLocations();
     _manager = _initClusterManager();
+  }
+
+  void _checkConnectivity() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    // ignore: unrelated_type_equality_checks
+    hasInternet = connectivityResult != ConnectivityResult.none;
   }
 
   Future<void> _setFarmLocations() async {
@@ -130,21 +140,26 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: !isLoading
-          ? GoogleMap(
-              mapType: MapType.normal,
-              markers: _markers,
-              polygons: _polygons,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: true,
-              initialCameraPosition: initialCameraPosition!,
-              onMapCreated: (GoogleMapController controller) {
-                _controller.complete(controller);
-                _manager.setMapId(controller.mapId);
-              },
-              onCameraMove: _manager.onCameraMove,
-              onCameraIdle: _manager.updateMap,
-            )
+      body: hasInternet
+          ? !isLoading
+              ? GoogleMap(
+                  mapType: MapType.normal,
+                  markers: _markers,
+                  polygons: _polygons,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: true,
+                  initialCameraPosition: initialCameraPosition!,
+                  onMapCreated: (GoogleMapController controller) {
+                    _controller.complete(controller);
+                    _manager.setMapId(controller.mapId);
+                  },
+                  onCameraMove: _manager.onCameraMove,
+                  onCameraIdle: _manager.updateMap,
+                )
+              : const Center(
+                  child: Text(
+                      "Offline Map View")) // Placeholder for offline map view
+
           : const Center(child: CircularProgressIndicator()),
     );
   }

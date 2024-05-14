@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:palmear_application/data/services/firestore_services/database_helper.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
+import 'package:palmear_application/domain/entities/user_model.dart';
+import 'package:palmear_application/data/services/firestore_services/farm_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:palmear_application/presentation/screens/signin_screen.dart';
-import 'package:palmear_application/domain/entities/user_model.dart';
 
 class AuthenticationWrapper extends StatelessWidget {
   const AuthenticationWrapper({super.key});
@@ -16,26 +18,26 @@ class AuthenticationWrapper extends StatelessWidget {
       builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
-        } else {
-          if (snapshot.hasData) {
-            return FutureBuilder<UserModel?>(
-              future: _loadUserFromLocal(snapshot.data!.uid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.data != null) {
-                    return const MyHomePage();
-                  } else {
-                    return const SignInScreen();
-                  }
+        } else if (snapshot.hasData) {
+          // Load user model and initiate session
+          return FutureBuilder<UserModel?>(
+            future: _loadUserFromLocal(snapshot.data!.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.data != null) {
+                  return Provider<FarmProvider>(
+                    create: (_) => FarmProvider(snapshot.data!.uid),
+                    child: const MyHomePage(),
+                  );
                 } else {
-                  return const CircularProgressIndicator();
+                  return const SignInScreen();
                 }
-              },
-            );
-          } else {
-            return const SignInScreen();
-          }
+              }
+              return const CircularProgressIndicator();
+            },
+          );
         }
+        return const CircularProgressIndicator();
       },
     );
   }
@@ -48,7 +50,6 @@ class AuthenticationWrapper extends StatelessWidget {
       UserSession().setUser(userModel);
       return userModel;
     } catch (e) {
-      // Only log the error to the console instead of showing a toast
       debugPrint("Error loading user from local database: $e");
       return null;
     }
