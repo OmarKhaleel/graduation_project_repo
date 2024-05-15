@@ -12,6 +12,7 @@ import 'package:palmear_application/domain/entities/tree_model.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/calculate_centroid.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/marker_builder.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/update_camera_bounds.dart';
+import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -26,11 +27,10 @@ class _MapScreenState extends State<MapScreen> {
   CameraPosition? initialCameraPosition;
   bool isLoading = true; // To handle loading state
   bool hasInternet = true;
-  // late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-  final List<TreeModel> treesList = [];
+  List<TreeModel> treesList = [];
   late Set<Marker> _markers = {};
   final Set<Polygon> _polygons = {};
-  final List<LatLng> _polygonPoints = [];
+  List<LatLng> _polygonPoints = [];
   late StreamSubscription<List<FarmModel>> _farmSubscription; // Declared here
 
   @override
@@ -45,6 +45,7 @@ class _MapScreenState extends State<MapScreen> {
     var connectivityResult = await Connectivity().checkConnectivity();
     // ignore: unrelated_type_equality_checks
     hasInternet = connectivityResult != ConnectivityResult.none;
+    showToast(message: "$hasInternet");
   }
 
   Future<void> _setFarmLocations() async {
@@ -60,17 +61,25 @@ class _MapScreenState extends State<MapScreen> {
             updatedPolygonPoints.addAll(farm.locations);
             var treeRepository =
                 TreeRepository(userId: sessionUser.uid, farmId: farm.uid);
-            List<TreeModel> trees = await treeRepository.getTrees();
-            updatedTreesList.addAll(trees);
+
+            // Fetch initial trees data
+            List<TreeModel> initialTrees = await treeRepository.getTrees();
+            updatedTreesList.addAll(initialTrees);
+
+            // Stream subscription for trees
+            treeRepository.getTreesStream().listen((trees) {
+              if (mounted) {
+                setState(() {
+                  treesList = trees;
+                  _manager.setItems(treesList); // Update the Cluster Manager
+                });
+              }
+            });
           }
 
           if (mounted) {
             setState(() {
-              _polygonPoints.clear();
-              _polygonPoints.addAll(updatedPolygonPoints);
-              treesList.clear();
-              treesList
-                  .addAll(updatedTreesList); // Update trees list for clustering
+              _polygonPoints = updatedPolygonPoints;
 
               // Calculate the centroid of the polygon
               LatLng centroid = calculateCentroid(_polygonPoints);
@@ -140,27 +149,26 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: hasInternet
-          ? !isLoading
-              ? GoogleMap(
-                  mapType: MapType.normal,
-                  markers: _markers,
-                  polygons: _polygons,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: true,
-                  initialCameraPosition: initialCameraPosition!,
-                  onMapCreated: (GoogleMapController controller) {
-                    _controller.complete(controller);
-                    _manager.setMapId(controller.mapId);
-                  },
-                  onCameraMove: _manager.onCameraMove,
-                  onCameraIdle: _manager.updateMap,
-                )
-              : const Center(
-                  child: Text(
-                      "Offline Map View")) // Placeholder for offline map view
-
-          : const Center(child: CircularProgressIndicator()),
-    );
+        body: hasInternet
+            ? !isLoading
+                ? GoogleMap(
+                    mapType: MapType.normal,
+                    markers: _markers,
+                    polygons: _polygons,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: true,
+                    initialCameraPosition: initialCameraPosition!,
+                    onMapCreated: (GoogleMapController controller) {
+                      _controller.complete(controller);
+                      _manager.setMapId(controller.mapId);
+                    },
+                    onCameraMove: _manager.onCameraMove,
+                    onCameraIdle: _manager.updateMap,
+                  )
+                : const Center(child: CircularProgressIndicator())
+            : const Center(
+                child: Text(
+                    "Offline Map View")) // Placeholder for offline map view
+        );
   }
 }

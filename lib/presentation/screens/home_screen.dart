@@ -6,8 +6,9 @@ import 'package:palmear_application/data/repositories/audio_device_repository_im
 import 'package:palmear_application/data/repositories/farm_repository.dart';
 import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/data/repositories/tree_repository.dart';
+import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
-import 'package:palmear_application/data/services/user_services/audio_services.dart';
+import 'package:palmear_application/data/services/audio_services/audio_services.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
 import 'package:palmear_application/domain/entities/farm_model.dart';
@@ -20,6 +21,7 @@ import 'package:palmear_application/presentation/widgets/home_screen_widgets/cou
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/no_audio_devices_text.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/palmear_audio_amplifier_status_text.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/start_stop_listening_text.dart';
+import 'package:provider/provider.dart';
 import 'map_screen.dart';
 import 'settings_screen.dart';
 import 'dart:io' show Platform;
@@ -275,9 +277,8 @@ class _MyHomePageState extends State<MyHomePage> {
               AudioDevicesListView(audioDevices: _audioDevices),
             const SizedBox(height: 10),
             PalmearAudioAmplifierStatusText(
-              isPalmearAudioAmplifierConnected:
-                  isPalmearAudioAmplifierConnected,
-            ),
+                isPalmearAudioAmplifierConnected:
+                    isPalmearAudioAmplifierConnected),
             const SizedBox(height: 100),
             CountdownText(countdown: _countdown),
             const SizedBox(height: 20),
@@ -382,7 +383,11 @@ class _MyHomePageState extends State<MyHomePage> {
         automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xFF00916E),
-      body: _buildPageContent(),
+      body: Consumer<AudioDeviceNotifier>(
+        builder: (context, notifier, child) {
+          return _buildPageContent();
+        },
+      ),
       bottomNavigationBar: BottomNavigationBarScreen(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemTapped,

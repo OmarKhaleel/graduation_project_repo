@@ -1,10 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/firestore_services/connectivity_service.dart';
 import 'package:palmear_application/data/services/firestore_services/database_helper.dart';
-import 'package:palmear_application/data/services/firestore_services/farm_provider.dart';
-import 'package:palmear_application/data/services/user_services/audio_services.dart';
+import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
+import 'package:palmear_application/data/services/provider_services/farm_provider.dart';
+import 'package:palmear_application/data/services/audio_services/audio_services.dart';
+import 'package:palmear_application/data/services/provider_services/settings_provider.dart';
+import 'package:palmear_application/data/services/provider_services/tree_provider.dart';
 import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:palmear_application/presentation/screens/signin_screen.dart';
 import 'package:palmear_application/theme/app_theme.dart';
@@ -64,15 +68,46 @@ class MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: AppTheme.lightTheme(),
-      home: Provider<FarmProvider>(
-        create: (_) => FarmProvider(widget.currentUser?.uid ?? ''),
-        child: widget.currentUser == null
-            ? const SignInScreen()
-            : const MyHomePage(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AudioDeviceNotifier(AudioDeviceRepositoryImpl()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(), // Add this provider
+        ),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.lightTheme(),
+        home: Provider<FarmProvider>(
+          create: (_) => FarmProvider(widget.currentUser?.uid ?? ''),
+          // child: widget.currentUser == null
+          //     ? const SignInScreen()
+          //     : const MyHomePage(),
+          child: ChangeNotifierProvider(
+            create: (_) => FarmProvider(widget.currentUser!.uid),
+            child: Consumer<FarmProvider>(
+              builder: (context, farmProvider, _) {
+                String farmId = farmProvider.farms.isNotEmpty
+                    ? farmProvider.farms.first.uid
+                    : "specificFarmId"; // Replace with logic to get the first farm or specific ID
+                return MultiProvider(
+                  providers: [
+                    ChangeNotifierProvider(
+                      create: (_) =>
+                          TreeProvider(widget.currentUser!.uid, farmId),
+                    ),
+                  ],
+                  child: widget.currentUser == null
+                      ? const SignInScreen()
+                      : const MyHomePage(),
+                );
+              },
+            ),
+          ),
+        ),
+        debugShowCheckedModeBanner: false,
       ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }

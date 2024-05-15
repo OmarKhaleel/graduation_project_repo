@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:palmear_application/data/services/firestore_services/database_helper.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
 import 'package:palmear_application/domain/entities/user_model.dart';
-import 'package:palmear_application/data/services/firestore_services/farm_provider.dart';
+import 'package:palmear_application/data/services/provider_services/farm_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:palmear_application/presentation/screens/home_screen.dart';
 import 'package:palmear_application/presentation/screens/signin_screen.dart';

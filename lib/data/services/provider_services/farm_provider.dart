@@ -9,14 +9,20 @@ class FarmProvider with ChangeNotifier {
   List<FarmModel> get farms => _farms;
 
   FarmProvider(String userId) {
+    _fetchFarms(userId);
+  }
+
+  void _fetchFarms(String userId) {
     _firestore
         .collection('users')
         .doc(userId)
         .collection('farms')
         .snapshots()
         .listen((snapshot) {
-      _farms =
-          snapshot.docs.map((doc) => FarmModel.fromJson(doc.data())).toList();
+      _farms = snapshot.docs.map((doc) {
+        var data = doc.data();
+        return FarmModel.fromJson(data);
+      }).toList();
       notifyListeners();
     });
   }
