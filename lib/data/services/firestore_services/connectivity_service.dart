@@ -8,6 +8,7 @@ class ConnectivityService extends ChangeNotifier {
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final SyncManager _syncManager = SyncManager();
+
   ConnectivityService() {
     initializeConnectivityListener();
   }

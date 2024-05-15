@@ -76,35 +76,35 @@ class MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(), // Add this provider
         ),
+        // Add other providers here as needed
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme(),
-        home: Provider<FarmProvider>(
-          create: (_) => FarmProvider(widget.currentUser?.uid ?? ''),
-          // child: widget.currentUser == null
-          //     ? const SignInScreen()
-          //     : const MyHomePage(),
-          child: ChangeNotifierProvider(
-            create: (_) => FarmProvider(widget.currentUser!.uid),
-            child: Consumer<FarmProvider>(
-              builder: (context, farmProvider, _) {
-                String farmId = farmProvider.farms.isNotEmpty
-                    ? farmProvider.farms.first.uid
-                    : "specificFarmId"; // Replace with logic to get the first farm or specific ID
-                return MultiProvider(
-                  providers: [
-                    ChangeNotifierProvider(
-                      create: (_) =>
-                          TreeProvider(widget.currentUser!.uid, farmId),
-                    ),
-                  ],
-                  child: widget.currentUser == null
-                      ? const SignInScreen()
-                      : const MyHomePage(),
-                );
-              },
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => ConnectivityService()),
+            ChangeNotifierProvider(
+              create: (_) => FarmProvider(widget.currentUser?.uid ?? ''),
+              child: Consumer<FarmProvider>(
+                builder: (context, farmProvider, _) {
+                  String farmId = farmProvider.farms.isNotEmpty
+                      ? farmProvider.farms.first.uid
+                      : "specificFarmId"; // Replace with logic to get the first farm or specific ID
+                  return MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider(
+                        create: (_) =>
+                            TreeProvider(widget.currentUser!.uid, farmId),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
+          ],
+          child: widget.currentUser == null
+              ? const SignInScreen()
+              : const MyHomePage(),
         ),
         debugShowCheckedModeBanner: false,
       ),
