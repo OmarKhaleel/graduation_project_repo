@@ -1,39 +1,58 @@
+import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
-import 'package:palmear_application/data/services/home_screen_services/audio_devices_service.dart';
-import 'dart:async';
+import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
 
-class AudioDeviceNotifier extends ChangeNotifier {
+class AudioDeviceProvider extends ChangeNotifier {
   List<AudioDeviceInfo> _audioDevices = [];
-  String _deviceStatus = 'No audio devices connected';
-  Timer? _timer;
-  bool isTesting = false;
-
-  AudioDeviceNotifier(AudioDeviceRepositoryImpl audioDeviceRepositoryImpl) {
-    _startListening();
-  }
+  bool _isPalmearAudioAmplifierConnected = false;
+  final bool _isTesting = Platform.environment.containsKey('FLUTTER_TEST');
+  late StreamSubscription _audioDeviceSubscription;
 
   List<AudioDeviceInfo> get audioDevices => _audioDevices;
-  String get deviceStatus => _deviceStatus;
+  bool get isPalmearAudioAmplifierConnected =>
+      _isPalmearAudioAmplifierConnected;
 
-  void _startListening() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      List<AudioDeviceInfo> devices =
-          await getAudioDevices(isTesting: isTesting);
-      if (devices.isEmpty) {
-        _deviceStatus = 'No audio devices connected';
-      } else {
-        _deviceStatus = 'Audio device connected: ${devices.first.name}';
-      }
-      _audioDevices = devices;
-      notifyListeners();
+  AudioDeviceProvider(AudioDeviceRepositoryImpl audioDeviceRepositoryImpl) {
+    _initialize();
+  }
+
+  void _initialize() {
+    _audioDeviceSubscription =
+        Stream.periodic(const Duration(seconds: 1)).listen((_) {
+      _getAudioDevices();
     });
+  }
+
+  Future<void> _getAudioDevices() async {
+    try {
+      final audioDeviceRepository = _isTesting
+          ? TestAudioDeviceRepository()
+          : AudioDeviceRepositoryImpl();
+      final devices = await audioDeviceRepository.getAudioDevices();
+      final deviceMap = <String, AudioDeviceInfo>{};
+
+      for (final device in devices) {
+        if (!deviceMap.containsKey(device.name) ||
+            device.sampleRate > deviceMap[device.name]!.sampleRate) {
+          deviceMap[device.name] = device;
+        }
+      }
+
+      _audioDevices = deviceMap.values.toList();
+      _isPalmearAudioAmplifierConnected = _audioDevices.any((device) =>
+          device.name.toLowerCase().contains('external microphone'));
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Failed to get audio devices: '$e'.");
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _audioDeviceSubscription.cancel();
     super.dispose();
   }
 }

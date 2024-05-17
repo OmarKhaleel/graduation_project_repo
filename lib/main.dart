@@ -51,18 +51,18 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  late ConnectivityService _connectivityService;
+  // late ConnectivityService _connectivityService;
 
   @override
   void initState() {
     super.initState();
-    _connectivityService = ConnectivityService();
-    _connectivityService.initializeConnectivityListener();
+    // _connectivityService = ConnectivityService();
+    // _connectivityService.initializeConnectivityListener();
   }
 
   @override
   void dispose() {
-    _connectivityService.dispose();
+    // _connectivityService.dispose();
     super.dispose();
   }
 
@@ -71,18 +71,22 @@ class MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => AudioDeviceNotifier(AudioDeviceRepositoryImpl()),
+          create: (_) => AudioDeviceProvider(
+            AudioDeviceRepositoryImpl(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(), // Add this provider
         ),
         // Add other providers here as needed
+        ChangeNotifierProvider(
+          create: (_) => ConnectivityService(),
+        ),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme(),
         home: MultiProvider(
           providers: [
-            ChangeNotifierProvider(create: (_) => ConnectivityService()),
             ChangeNotifierProvider(
               create: (_) => FarmProvider(widget.currentUser?.uid ?? ''),
               child: Consumer<FarmProvider>(

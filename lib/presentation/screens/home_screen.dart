@@ -4,13 +4,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as toolkit;
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/repositories/farm_repository.dart';
-import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/data/repositories/tree_repository.dart';
 import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
 import 'package:palmear_application/data/services/audio_services/audio_services.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
-import 'package:palmear_application/domain/entities/audio_device_info.dart';
 import 'package:palmear_application/domain/entities/farm_model.dart';
 import 'package:palmear_application/domain/entities/tree_model.dart';
 import 'package:palmear_application/domain/use_cases/home_screen_use_cases/scan_utils.dart';
@@ -24,7 +22,6 @@ import 'package:palmear_application/presentation/widgets/home_screen_widgets/sta
 import 'package:provider/provider.dart';
 import 'map_screen.dart';
 import 'settings_screen.dart';
-import 'dart:io' show Platform;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -33,12 +30,11 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  List<AudioDeviceInfo> _audioDevices = [];
   bool isPalmearAudioAmplifierConnected = false;
   final audioDeviceRepository = AudioDeviceRepositoryImpl();
-  final bool _isTesting = Platform.environment.containsKey('FLUTTER_TEST');
   bool _isListening = false;
   int _countdown = 50;
   Timer? timer;
@@ -47,6 +43,9 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isUserInsideFarmValue = false;
   FarmModel? _selectedFarm;
   final AudioProcessor _audioProcessor = AudioProcessor();
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  Color _iconColor = const Color(0xFF00916E); // Initial icon color
 
   // Test for live location
   double lat = 0;
@@ -55,9 +54,20 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _getAudioDevices();
     _checkPermission();
     _isUserInsideFarmChecker();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 1.0, end: 2.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   void _onItemTapped(int index) {
@@ -76,30 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return const SettingsScreen();
       default:
         return _buildHomeContent();
-    }
-  }
-
-  Future<void> _getAudioDevices() async {
-    try {
-      final audioDeviceRepository = _isTesting
-          ? TestAudioDeviceRepository()
-          : AudioDeviceRepositoryImpl();
-      final devices = await audioDeviceRepository.getAudioDevices();
-      final deviceMap = <String, AudioDeviceInfo>{};
-
-      for (final device in devices) {
-        if (!deviceMap.containsKey(device.name) ||
-            device.sampleRate > deviceMap[device.name]!.sampleRate) {
-          deviceMap[device.name] = device;
-        }
-      }
-      setState(() {
-        _audioDevices = deviceMap.values.toList();
-        isPalmearAudioAmplifierConnected = _audioDevices.any((device) =>
-            device.name.toLowerCase().contains('external microphone'));
-      });
-    } catch (e) {
-      debugPrint("Failed to get audio devices: '$e'.");
     }
   }
 
@@ -265,103 +251,166 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Color _getButtonColor() {
+    if (_countdown > 30) {
+      return Colors.green;
+    } else if (_countdown > 10) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
   Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      child: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (_audioDevices.isEmpty)
-              const NoAudioDevicesText()
-            else
-              AudioDevicesListView(audioDevices: _audioDevices),
-            const SizedBox(height: 10),
-            PalmearAudioAmplifierStatusText(
-                isPalmearAudioAmplifierConnected:
-                    isPalmearAudioAmplifierConnected),
-            const SizedBox(height: 100),
-            CountdownText(countdown: _countdown),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _isUserInsideFarmChecker();
-                if (!_isUserInsideFarmValue) {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Out of your authorized area!'),
-                        content: const Text(
-                            'You can\'t scan trees that aren\'t inside your farm. Please make sure you\'re inside your farm to be able to scan.'),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('OK'),
+    return Consumer<AudioDeviceProvider>(
+      builder: (context, audioDeviceProvider, child) {
+        return SingleChildScrollView(
+          child: Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (audioDeviceProvider.audioDevices.isEmpty)
+                  const NoAudioDevicesText()
+                else
+                  AudioDevicesListView(
+                      audioDevices: audioDeviceProvider.audioDevices),
+                const SizedBox(height: 10),
+                PalmearAudioAmplifierStatusText(
+                    isPalmearAudioAmplifierConnected:
+                        audioDeviceProvider.isPalmearAudioAmplifierConnected),
+                const SizedBox(height: 100),
+                CountdownText(countdown: _countdown),
+                const SizedBox(height: 20),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (_isListening)
+                      ScaleTransition(
+                        scale: _animation,
+                        child: Container(
+                          width:
+                              250, // Increase width for wider pulsating range
+                          height:
+                              200, // Increase height for wider pulsating range
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(
+                                0.2), // White color with transparency
                           ),
-                        ],
-                      );
-                    },
-                  );
-                } else {
-                  if (isPalmearAudioAmplifierConnected) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text(
-                              'Palmear Audio Amplifier Not Connected'),
-                          content: const Text(
-                              'Please connect the Palmear Audio Amplifier properly to the mobile phone.'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
+                        ),
+                      ),
+                    Container(
+                      width: 200, // width of the outer circle
+                      height: 200, // height of the outer circle
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isListening
+                              ? Colors.transparent
+                              : const Color(
+                                  0xFF24BF86), // Hide ring when listening
+                          width: 10, // width of the ring
+                        ),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _isUserInsideFarmChecker();
+                          if (!_isUserInsideFarmValue) {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text(
+                                      'Out of your authorized area!'),
+                                  content: const Text(
+                                      'You can\'t scan trees that aren\'t inside your farm. Please make sure you\'re inside your farm to be able to scan.'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          } else {
+                            if (audioDeviceProvider
+                                .isPalmearAudioAmplifierConnected) {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text(
+                                        'Palmear Audio Amplifier Not Connected'),
+                                    content: const Text(
+                                        'Please connect the Palmear Audio Amplifier properly to the mobile phone.'),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            } else {
+                              setState(() {
+                                _isListening = !_isListening;
+                                _countdown = 50;
+                                _iconColor = _isListening
+                                    ? Colors.white
+                                    : const Color(
+                                        0xFF00916E); // Change icon color
+
+                                if (_isListening) {
+                                  startCountdown();
+                                  startScan();
+                                  _animationController.repeat();
+                                } else {
+                                  stopScan();
+                                  timer?.cancel();
+                                  _audioProcessor.stopStreaming();
+                                  _animationController.stop();
+                                }
+                              });
+                            }
+                          }
+                        },
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.resolveWith<Color>(
+                            (Set<MaterialState> states) {
+                              return _isListening
+                                  ? _getButtonColor()
+                                  : Colors.white;
+                            },
+                          ),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100.0),
                             ),
-                          ],
-                        );
-                      },
-                    );
-                  } else {
-                    setState(() {
-                      _isListening = !_isListening;
-                      _countdown = 50;
-                      if (_isListening) {
-                        startCountdown();
-                        startScan();
-                      } else {
-                        stopScan();
-                        timer?.cancel();
-                        _audioProcessor.stopStreaming();
-                      }
-                    });
-                  }
-                }
-              },
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                  (Set<MaterialState> states) {
-                    return _isListening ? Colors.red : Colors.white;
-                  },
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.hearing,
+                          size: 100,
+                          color: _iconColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100.0),
-                  ),
-                ),
-                padding: MaterialStateProperty.all<EdgeInsets>(
-                    const EdgeInsets.all(50)),
-              ),
-              child: const Icon(
-                Icons.hearing,
-                size: 100,
-                color: Color(0xFF00916E),
-              ),
+                const SizedBox(height: 20),
+                StartStopListeningText(isListening: _isListening),
+              ],
             ),
-            const SizedBox(height: 20),
-            StartStopListeningText(isListening: _isListening),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -372,18 +421,10 @@ class _MyHomePageState extends State<MyHomePage> {
         title:
             const Text('Pest Detection', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF00916E),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              // Implement action
-            },
-          ),
-        ],
         automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xFF00916E),
-      body: Consumer<AudioDeviceNotifier>(
+      body: Consumer<AudioDeviceProvider>(
         builder: (context, notifier, child) {
           return _buildPageContent();
         },
