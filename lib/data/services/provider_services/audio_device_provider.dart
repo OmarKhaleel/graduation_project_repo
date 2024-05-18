@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/repositories/test_audio_device_repository.dart';
 import 'package:palmear_application/domain/entities/audio_device_info.dart';
+import 'package:palmear_application/domain/use_cases/home_screen_use_cases/platform_utils.dart';
 
 class AudioDeviceProvider extends ChangeNotifier {
   List<AudioDeviceInfo> _audioDevices = [];
@@ -15,7 +16,7 @@ class AudioDeviceProvider extends ChangeNotifier {
   bool get isPalmearAudioAmplifierConnected =>
       _isPalmearAudioAmplifierConnected;
 
-  AudioDeviceProvider(AudioDeviceRepositoryImpl audioDeviceRepositoryImpl) {
+  AudioDeviceProvider() {
     _initialize();
   }
 
@@ -42,8 +43,16 @@ class AudioDeviceProvider extends ChangeNotifier {
       }
 
       _audioDevices = deviceMap.values.toList();
-      _isPalmearAudioAmplifierConnected = _audioDevices.any((device) =>
-          device.name.toLowerCase().contains('external microphone'));
+
+      if (PlatformUtils.isAndroid) {
+        _isPalmearAudioAmplifierConnected = _audioDevices.any((device) =>
+            device.name.toLowerCase().contains('km_b2 digital audio'));
+      } else if (PlatformUtils.isIOS) {
+        _isPalmearAudioAmplifierConnected = _audioDevices.any((device) =>
+            device.name.toLowerCase().contains('external microphone'));
+      } else {
+        // Do nothing
+      }
       notifyListeners();
     } catch (e) {
       debugPrint("Failed to get audio devices: '$e'.");

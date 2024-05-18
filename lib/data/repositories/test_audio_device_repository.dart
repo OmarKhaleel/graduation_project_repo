@@ -6,8 +6,8 @@ class TestAudioDeviceRepository implements AudioDeviceRepository {
   Future<List<AudioDeviceInfo>> getAudioDevices() async {
     // Create a list of audio devices (mock data)
     return [
+      AudioDeviceInfo('KM_B2 Digital Audio', 44100, 'stereo', 'Yes'),
       AudioDeviceInfo('External Microphone', 44100, 'stereo', 'Yes'),
-      AudioDeviceInfo('Other Device', 48000, 'stereo', 'No'),
     ];
   }
 }
