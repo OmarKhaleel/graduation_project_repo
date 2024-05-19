@@ -1,18 +1,15 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:palmear_application/data/repositories/farm_repository.dart';
 import 'package:palmear_application/data/repositories/tree_repository.dart';
-import 'package:palmear_application/data/services/firestore_services/connectivity_service.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
 import 'package:palmear_application/domain/entities/farm_model.dart';
 import 'package:palmear_application/domain/entities/tree_model.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/calculate_centroid.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/marker_builder.dart';
 import 'package:palmear_application/domain/use_cases/map_screen_use_cases/update_camera_bounds.dart';
-import 'package:provider/provider.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -23,7 +20,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late ClusterManager _manager;
-  Completer<GoogleMapController> _controller = Completer();
+  final Completer<GoogleMapController> _controller = Completer();
   CameraPosition? initialCameraPosition;
   bool isLoading = true; // To handle loading state
   bool hasInternet = true;
@@ -32,28 +29,12 @@ class _MapScreenState extends State<MapScreen> {
   final Set<Polygon> _polygons = {};
   List<LatLng> _polygonPoints = [];
   late StreamSubscription<List<FarmModel>> _farmSubscription; // Declared here
-  late VoidCallback _connectivityListener;
 
   @override
   void initState() {
     super.initState();
     _setFarmLocations();
     _manager = _initClusterManager();
-
-    _connectivityListener = () {
-      if (mounted) {
-        bool isConnected = context.read<ConnectivityService>().isConnected;
-        setState(() {
-          hasInternet = isConnected;
-        });
-        if (isConnected) {
-          _resetMapController();
-          _manager = _initClusterManager();
-        }
-      }
-    };
-
-    context.read<ConnectivityService>().addListener(_connectivityListener);
   }
 
   Future<void> _setFarmLocations() async {
@@ -147,12 +128,6 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _resetMapController() {
-    setState(() {
-      _controller = Completer();
-    });
-  }
-
   @override
   void dispose() {
     _controller.future.then((controller) => controller.dispose());
@@ -162,7 +137,6 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // bool isConnected = context.watch<ConnectivityService>().isConnected;
     return Scaffold(
       body: !isLoading
           ? GoogleMap(
