@@ -7,8 +7,8 @@ import 'package:palmear_application/data/services/user_services/user_session.dar
 import 'package:palmear_application/domain/entities/tree_model.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 
-Future<void> userInsideFarmOperations(
-    Position currentLocation, TreeDetails treeDetails) async {
+Future<void> userInsideFarmOperations(Position currentLocation,
+    TreeDetails treeDetails, String resultLabel) async {
   var sessionUser = UserSession().getUser();
   if (sessionUser != null) {
     var farmRepository = FarmRepository(userId: sessionUser.uid);
@@ -45,19 +45,17 @@ Future<void> userInsideFarmOperations(
           }
 
           if (nearestDistance > 3) {
-            String label = "Infested";
             double latitude = currentLocation.latitude;
             double longitude = currentLocation.longitude;
 
             treeDetails.addTreeToUserFarm(
-              label,
+              resultLabel,
               latitude,
               longitude,
               farm.uid,
             );
           } else if (nearestTree != null) {
-            String label = "Healthy";
-            treeDetails.updateSelectedTreeLabel(nearestTree.uid, label);
+            treeDetails.updateSelectedTreeLabel(nearestTree.uid, resultLabel);
           } else {
             showToast(
                 message:

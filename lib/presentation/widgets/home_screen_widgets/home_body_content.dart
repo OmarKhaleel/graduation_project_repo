@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/audio_services/audio_services.dart';
 import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
+import 'package:palmear_application/data/services/simulation_services/mel_spectogram_service.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
 import 'package:palmear_application/domain/use_cases/home_screen_use_cases/get_user_location.dart';
 import 'package:palmear_application/domain/use_cases/home_screen_use_cases/is_user_inside_farm_checker.dart';
@@ -14,13 +15,9 @@ import 'package:palmear_application/presentation/widgets/general_widgets/toast.d
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/amplifier_not_connected_dialog.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/audio_devices_list_view.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/countdown_text.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/custom_button_style.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/custom_icon.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/no_audio_devices_text.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/outside_area_dialog.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/palmear_audio_amplifier_status_text.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/ring_container_widget.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/scale_transition_widget.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/start_stop_listening_text.dart';
 import 'package:provider/provider.dart';
 
@@ -45,6 +42,9 @@ class _HomeBodyContentState extends State<HomeBodyContent>
   late AnimationController _animationController;
   late Animation<double> _animation;
   Color _iconColor = const Color(0xFF00916E); // Initial icon color
+  Color _buttonBackgroundColor = Colors.white;
+  int _redColorCount = 0;
+  String _resultLabel = "Healthy";
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0.1, end: 0.1).animate(
+    _animation = Tween<double>(begin: 1.0, end: 2.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeInOut,
@@ -65,8 +65,25 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     );
   }
 
+  void updateUI() {
+    List<List<double>> spectrogram = generateSimulatedSpectrogram(1, 128);
+    Color newColor = getColorFromSpectrogram(spectrogram);
+
+    setState(() {
+      _buttonBackgroundColor = newColor;
+      if (_buttonBackgroundColor == Colors.red) {
+        _redColorCount++;
+      }
+      // Check if the red color count is 10 and stop if true
+      if (_redColorCount == 5) {
+        _stopListening();
+      }
+    });
+  }
+
   void _startCountdown() async {
     if (await _audioProcessor.requestMicrophonePermission()) {
+      updateUI();
       _audioProcessor.startStreaming();
       const oneSec = Duration(seconds: 1);
       timer = Timer.periodic(
@@ -74,15 +91,11 @@ class _HomeBodyContentState extends State<HomeBodyContent>
         (Timer timer) {
           setState(() {
             if (_countdown < 1) {
-              timer.cancel();
-              _isListening = false;
-              _iconColor = const Color(0xFF00916E);
-              _countdown = 50;
-              _audioProcessor.stopStreaming();
-              stopScan();
-              _userInsideFarmOperations();
+              _redColorCount = 0;
+              _stopListening();
             } else {
               _countdown--;
+              updateUI();
             }
           });
         },
@@ -92,13 +105,29 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     }
   }
 
+  void _stopListening() {
+    timer?.cancel(); // Stop the timer
+    _isListening = false;
+    _iconColor = const Color(0xFF00916E);
+    _countdown = 50;
+    _audioProcessor.stopStreaming();
+    stopScan();
+    _resultLabel = "Infested";
+    _userInsideFarmOperations();
+    _redColorCount = 0;
+  }
+
   Future<void> _initUserInsideFarmChecker() async {
     _currentLocation = (await getUserLocation())!;
     _isUserInsideFarmValue = await isUserInsideFarmChecker(_currentLocation);
   }
 
   Future<void> _userInsideFarmOperations() async {
-    await userInsideFarmOperations(_currentLocation, _treeDetails);
+    await userInsideFarmOperations(
+      _currentLocation,
+      _treeDetails,
+      _resultLabel,
+    );
   }
 
   @override
@@ -132,10 +161,34 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                   alignment: Alignment.center,
                   children: [
                     if (_isListening)
-                      CustomScaleTransition(
-                          animation: _animation), // Use the custom widget
-                    RingContainer(
-                      isListening: _isListening,
+                      ScaleTransition(
+                        scale: _animation,
+                        child: Container(
+                          width:
+                              250, // Increase width for wider pulsating range
+                          height:
+                              200, // Increase height for wider pulsating range
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(
+                                0.2), // White color with transparency
+                          ),
+                        ),
+                      ), // Use the custom widget
+                    Container(
+                      width: 200, // width of the outer circle
+                      height: 200, // height of the outer circle
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isListening
+                              ? Colors.transparent
+                              : const Color(
+                                  0xFF24BF86), // Hide ring when listening
+                          width: 10, // width of the ring
+                        ),
+                      ),
                       child: ElevatedButton(
                         onPressed: () async {
                           await _initUserInsideFarmChecker();
@@ -161,6 +214,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                               setState(() {
                                 _isListening = !_isListening;
                                 _countdown = 50;
+                                _redColorCount = 0;
                                 _iconColor = _isListening
                                     ? Colors.white
                                     : const Color(
@@ -180,8 +234,27 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                             }
                           }
                         },
-                        style: customButtonStyle(_isListening, _countdown),
-                        child: customIcon(_iconColor),
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.resolveWith<Color>(
+                            (Set<MaterialState> states) {
+                              return _isListening
+                                  ? _buttonBackgroundColor
+                                  : Colors.white;
+                            },
+                          ),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100.0),
+                            ),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.hearing,
+                          size: 100,
+                          color: _iconColor,
+                        ),
                       ),
                     ),
                   ],

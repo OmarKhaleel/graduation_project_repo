@@ -3,7 +3,7 @@ import 'package:palmear_application/data/services/user_services/user_details.dar
 import 'package:palmear_application/presentation/widgets/settings_screen_widgets/account_label.dart';
 import 'package:palmear_application/presentation/widgets/settings_screen_widgets/app_version_label.dart';
 import 'package:palmear_application/presentation/widgets/settings_screen_widgets/app_version_list_tile.dart';
-import 'package:palmear_application/presentation/widgets/settings_screen_widgets/cache_test_label.dart';
+import 'package:palmear_application/presentation/widgets/settings_screen_widgets/edit_information_label.dart';
 import 'package:palmear_application/presentation/widgets/settings_screen_widgets/edit_name_textfield_list_tile.dart';
 import 'package:palmear_application/presentation/widgets/settings_screen_widgets/logout_list_tile.dart';
 

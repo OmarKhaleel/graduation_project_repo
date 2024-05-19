@@ -9,8 +9,7 @@ import 'package:palmear_application/presentation/widgets/general_widgets/bottom_
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/amplifier_not_connected_dialog.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/audio_devices_list_view.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/countdown_text.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/custom_button_style.dart';
-import 'package:palmear_application/presentation/widgets/home_screen_widgets/custom_icon.dart';
+import 'package:palmear_application/presentation/widgets/home_screen_widgets/get_button_color.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/no_audio_devices_text.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/outside_area_dialog.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/palmear_audio_amplifier_status_text.dart';
@@ -165,8 +164,25 @@ class _MyHomePageTestState extends State<MyHomePageTest> {
                       }
                     }
                   },
-                  style: customButtonStyle(_isListening, _countdown),
-                  child: customIcon(_iconColor),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (Set<MaterialState> states) {
+                        return _isListening
+                            ? getButtonColor(_countdown)
+                            : Colors.white;
+                      },
+                    ),
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100.0),
+                      ),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.hearing,
+                    size: 100,
+                    color: _iconColor,
+                  ),
                 ),
               ],
             ),
