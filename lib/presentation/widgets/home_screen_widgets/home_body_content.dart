@@ -75,7 +75,8 @@ class _HomeBodyContentState extends State<HomeBodyContent>
         _redColorCount++;
       }
       // Check if the red color count is 10 and stop if true
-      if (_redColorCount == 5) {
+      if (_redColorCount == 10) {
+        _resultLabel = "Infested";
         _stopListening();
       }
     });
@@ -110,9 +111,9 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     _isListening = false;
     _iconColor = const Color(0xFF00916E);
     _countdown = 50;
+    _redColorCount = 0;
     _audioProcessor.stopStreaming();
     stopScan();
-    _resultLabel = "Infested";
     _userInsideFarmOperations();
     _redColorCount = 0;
   }

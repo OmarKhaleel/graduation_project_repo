@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:palmear_application/data/services/firestore_services/connectivity_service.dart';
 import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
 import 'package:palmear_application/data/services/provider_services/farm_provider.dart';
 import 'package:palmear_application/data/services/provider_services/settings_provider.dart';
@@ -24,9 +23,6 @@ class MainWidgetsProvider extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ConnectivityService(),
         ),
       ],
       child: MaterialApp(
