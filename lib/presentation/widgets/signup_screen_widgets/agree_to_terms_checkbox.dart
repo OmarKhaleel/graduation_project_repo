@@ -23,7 +23,7 @@ class AgreeToTermsCheckbox extends StatelessWidget {
             'I agree to the Privacy policy and Terms & conditions',
             style: TextStyle(
               color: Color(0xFF00916E),
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
           ),

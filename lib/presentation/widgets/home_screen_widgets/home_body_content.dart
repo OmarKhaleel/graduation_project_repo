@@ -45,6 +45,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
   Color _buttonBackgroundColor = Colors.white;
   int _redColorCount = 0;
   String _resultLabel = "Healthy";
+  String _scanStatusMessage = ""; // State variable for scan status message
 
   @override
   void initState() {
@@ -83,6 +84,10 @@ class _HomeBodyContentState extends State<HomeBodyContent>
   }
 
   void _startCountdown() async {
+    setState(() {
+      _scanStatusMessage = "Scanning.."; // Set initial scanning message
+    });
+
     if (await _audioProcessor.requestMicrophonePermission()) {
       updateUI();
       _audioProcessor.startStreaming();
@@ -116,6 +121,14 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     stopScan();
     _userInsideFarmOperations();
     _redColorCount = 0;
+
+    setState(() {
+      if (_resultLabel == "Healthy") {
+        _scanStatusMessage = "The last scan result came back as Healthy";
+      } else {
+        _scanStatusMessage = "The last scan result came back as Infested";
+      }
+    });
   }
 
   Future<void> _initUserInsideFarmChecker() async {
@@ -155,7 +168,32 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                 PalmearAudioAmplifierStatusText(
                     isPalmearAudioAmplifierConnected:
                         audioDeviceProvider.isPalmearAudioAmplifierConnected),
-                const SizedBox(height: 100),
+                const SizedBox(height: 80),
+                if (_scanStatusMessage.isNotEmpty)
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _scanStatusMessage == "Scanning.."
+                              ? 'Scanning..'
+                              : 'The last scan result came back as ',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 18),
+                        ),
+                        if (_scanStatusMessage != "Scanning..")
+                          TextSpan(
+                            text: _resultLabel,
+                            style: TextStyle(
+                              color: _resultLabel == "Healthy"
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontSize: 18,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 20),
                 CountdownText(countdown: _countdown),
                 const SizedBox(height: 20),
                 Stack(
