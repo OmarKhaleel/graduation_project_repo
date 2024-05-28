@@ -109,6 +109,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     });
 
     if (await _audioProcessor.requestMicrophonePermission()) {
+      _resultLabel = "Healthy";
       _audioProcessor.startStreaming();
       const oneSec = Duration(seconds: 1);
       timer = Timer.periodic(
@@ -117,7 +118,6 @@ class _HomeBodyContentState extends State<HomeBodyContent>
           if (!mounted) return; // Check if the widget is still mounted
           setState(() {
             if (_countdown < 1) {
-              _redColorCount = 0;
               _stopListening();
             } else {
               double averageFrequency = _currentSecondFrequencies.isEmpty
@@ -137,7 +137,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     }
   }
 
-  void _stopListening() {
+  void _stopListening() async {
     timer?.cancel(); // Stop the timer
     _isListening = false;
     _iconColor = const Color(0xFF00916E);
