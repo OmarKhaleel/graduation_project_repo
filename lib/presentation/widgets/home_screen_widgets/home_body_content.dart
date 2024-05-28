@@ -46,6 +46,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
   late Animation<double> _animation;
   Color _iconColor = const Color(0xFF00916E); // Initial icon color
   Color _buttonBackgroundColor = Colors.white;
+  final List<double> _currentSecondFrequencies = [];
   int _redColorCount = 0;
   String _resultLabel = "Healthy";
   String _scanStatusMessage = ""; // State variable for scan status message
@@ -73,7 +74,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
       switch (call.method) {
         case 'updateFrequency':
           double frequency = call.arguments;
-          updateUI(frequency);
+          _currentSecondFrequencies.add(frequency);
           break;
         case 'generateSpectrogram':
           // List<dynamic> spectrogram = call.arguments;
@@ -84,8 +85,8 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     });
   }
 
-  Future<void> updateUI(double frequency) async {
-    Color? newColor = await _audioProcessor.processFrequency(frequency);
+  Future<void> updateUI(double averageFrequency) async {
+    Color? newColor = await _audioProcessor.processFrequency(averageFrequency);
     if (newColor != null) {
       if (!mounted) return;
       setState(() {
@@ -119,6 +120,13 @@ class _HomeBodyContentState extends State<HomeBodyContent>
               _redColorCount = 0;
               _stopListening();
             } else {
+              double averageFrequency = _currentSecondFrequencies.isEmpty
+                  ? 0.0
+                  : _currentSecondFrequencies.reduce((a, b) => a + b) /
+                      _currentSecondFrequencies.length;
+              _currentSecondFrequencies.clear();
+              updateUI(averageFrequency);
+
               _countdown--;
             }
           });
@@ -133,15 +141,15 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     timer?.cancel(); // Stop the timer
     _isListening = false;
     _iconColor = const Color(0xFF00916E);
+    if (_countdown < 1 || _redColorCount == 10) {
+      _userInsideFarmOperations();
+    }
     _countdown = 50;
     _audioProcessor.stopStreaming();
     stopScan();
-    _userInsideFarmOperations();
     _redColorCount = 0;
 
-    setState(() {
-      _scanStatusMessage = "The last scan result came back as $_resultLabel";
-    });
+    _scanStatusMessage = "The last scan result came back as $_resultLabel";
   }
 
   Future<void> _initUserInsideFarmChecker() async {
@@ -151,7 +159,6 @@ class _HomeBodyContentState extends State<HomeBodyContent>
 
   Future<void> _userInsideFarmOperations() async {
     await userInsideFarmOperations(
-      _currentLocation,
       _treeDetails,
       _resultLabel,
     );

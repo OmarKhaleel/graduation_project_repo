@@ -5,10 +5,12 @@ import 'package:palmear_application/data/repositories/tree_repository.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
 import 'package:palmear_application/data/services/user_services/user_session.dart';
 import 'package:palmear_application/domain/entities/tree_model.dart';
+import 'package:palmear_application/domain/use_cases/home_screen_use_cases/get_user_location.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 
-Future<void> userInsideFarmOperations(Position currentLocation,
+Future<void> userInsideFarmOperations(
     TreeDetails treeDetails, String resultLabel) async {
+  Position currentLocation = (await getUserLocation())!;
   var sessionUser = UserSession().getUser();
   if (sessionUser != null) {
     var farmRepository = FarmRepository(userId: sessionUser.uid);
@@ -44,7 +46,7 @@ Future<void> userInsideFarmOperations(Position currentLocation,
             }
           }
 
-          if (nearestDistance > 3) {
+          if (nearestDistance > 4) {
             double latitude = currentLocation.latitude;
             double longitude = currentLocation.longitude;
 
