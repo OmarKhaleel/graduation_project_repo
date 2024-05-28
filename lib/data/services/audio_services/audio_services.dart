@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:audio_streamer/audio_streamer.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
 
 class AudioProcessor {
-  AudioStreamer? _streamer;
-  final List<double> _audioBuffer = [];
-  StreamSubscription<List<double>>? _audioSubscription;
+  static const MethodChannel _platform =
+      MethodChannel('com.example.palmear_application/audio');
 
   Future<bool> requestMicrophonePermission() async {
     var status = await Permission.microphone.request();
@@ -16,23 +16,22 @@ class AudioProcessor {
   void startStreaming() async {
     bool granted = await requestMicrophonePermission();
     if (granted) {
-      _streamer = AudioStreamer();
-      _audioSubscription = _streamer!.audioStream.listen((data) {
-        _audioBuffer.addAll(data);
-      });
+      _platform.invokeMethod('startRecording');
     } else {
       showToast(message: 'Microphone permission denied');
     }
   }
 
   void stopStreaming() {
-    if (_audioSubscription != null) {
-      _audioSubscription!.cancel();
-      _audioSubscription = null;
-      _streamer = null;
-      int bufferLength = _audioBuffer.length;
-      showToast(message: 'Audio stopped. Buffer Length: $bufferLength');
-      _audioBuffer.clear();
+    _platform.invokeMethod('stopRecording');
+  }
+
+  Future<Color?> processFrequency(double frequency) async {
+    if (frequency > 1000) {
+      return Colors.orange; // Too loud
+    } else if (frequency > 750) {
+      return Colors.red; // Close to the mic
     }
+    return Colors.green; // Normal room sounds
   }
 }

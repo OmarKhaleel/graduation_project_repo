@@ -64,5 +64,6 @@ Future<BitmapDescriptor> getPieChartMarkerBitmap(
   final img = await pictureRecorder.endRecording().toImage(size, size);
   final data = await img.toByteData(format: ImageByteFormat.png) as ByteData;
 
+  // ignore: deprecated_member_use
   return BitmapDescriptor.fromBytes(data.buffer.asUint8List());
 }

@@ -16,17 +16,7 @@ class TreeDetails {
         await _dbHelper.addTree(label, latitude, longitude, farmid);
         showToast(message: "Tree added successfully");
 
-        try {
-          var connectivityResult = await Connectivity().checkConnectivity();
-          // ignore: unrelated_type_equality_checks
-          bool hasInternet = connectivityResult != ConnectivityResult.none;
-
-          if (hasInternet) {
-            await _syncManager.syncTreesToFirestore();
-          }
-        } catch (e) {
-          showToast(message: "Error in syncing the new tree: $e");
-        }
+        await _syncIfConnected();
       } catch (e) {
         showToast(message: "Error while adding the new tree: $e");
       }
@@ -40,20 +30,25 @@ class TreeDetails {
       try {
         await _dbHelper.updateTreeLabel(treeid, label);
         showToast(message: "Tree label updated successfully");
-        try {
-          var connectivityResult = await Connectivity().checkConnectivity();
-          // ignore: unrelated_type_equality_checks
-          bool hasInternet = connectivityResult != ConnectivityResult.none;
 
-          if (hasInternet) {
-            await _syncManager.syncTreesToFirestore();
-          }
-        } catch (e) {
-          showToast(message: "Error in syncing the updated tree label: $e");
-        }
+        await _syncIfConnected();
       } catch (e) {
         showToast(message: "Error while editing the updated tree label: $e");
       }
+    }
+  }
+
+  Future<void> _syncIfConnected() async {
+    try {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      // ignore: unrelated_type_equality_checks
+      bool hasInternet = connectivityResult != ConnectivityResult.none;
+
+      if (hasInternet) {
+        await _syncManager.syncTreesToFirestore();
+      }
+    } catch (e) {
+      // Handle errors gracefully if needed
     }
   }
 }

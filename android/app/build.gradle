@@ -43,6 +43,9 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
+dependencies {
+    implementation 'com.github.wendykierp:JTransforms:3.1'
+}
 
     buildTypes {
         release {
