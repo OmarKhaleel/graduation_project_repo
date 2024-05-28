@@ -58,6 +58,7 @@ class SyncManager {
   Future<void> syncToFirestore() async {
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
+      // ignore: unrelated_type_equality_checks
       if (connectivityResult == ConnectivityResult.none) {
         return; // No internet connection, skip sync
       }

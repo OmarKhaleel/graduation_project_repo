@@ -41,6 +41,7 @@ class TreeDetails {
   Future<void> _syncIfConnected() async {
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
+      // ignore: unrelated_type_equality_checks
       bool hasInternet = connectivityResult != ConnectivityResult.none;
 
       if (hasInternet) {
