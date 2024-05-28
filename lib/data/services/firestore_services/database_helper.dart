@@ -109,10 +109,10 @@ class DatabaseHelper {
 
   Future<Map<String, dynamic>?> getFarm(String farmId) async {
     final db = await database;
-    List<Map> farms =
+    List<Map<String, dynamic>> farms =
         await db.query('farms', where: 'uid = ?', whereArgs: [farmId]);
     if (farms.isNotEmpty) {
-      return farms.first as Map<String, dynamic>;
+      return farms.first;
     }
     return null;
   }

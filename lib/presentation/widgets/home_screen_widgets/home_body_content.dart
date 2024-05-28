@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:palmear_application/data/repositories/audio_device_repository_impl.dart';
 import 'package:palmear_application/data/services/audio_services/audio_services.dart';
 import 'package:palmear_application/data/services/provider_services/audio_device_provider.dart';
-import 'package:palmear_application/data/services/simulation_services/mel_spectogram_service.dart';
 import 'package:palmear_application/data/services/tree_services/tree_details.dart';
 import 'package:palmear_application/domain/use_cases/home_screen_use_cases/get_user_location.dart';
 import 'package:palmear_application/domain/use_cases/home_screen_use_cases/is_user_inside_farm_checker.dart';
@@ -20,6 +19,7 @@ import 'package:palmear_application/presentation/widgets/home_screen_widgets/out
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/palmear_audio_amplifier_status_text.dart';
 import 'package:palmear_application/presentation/widgets/home_screen_widgets/start_stop_listening_text.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class HomeBodyContent extends StatefulWidget {
   const HomeBodyContent({super.key});
@@ -30,6 +30,9 @@ class HomeBodyContent extends StatefulWidget {
 
 class _HomeBodyContentState extends State<HomeBodyContent>
     with SingleTickerProviderStateMixin {
+  static const MethodChannel _platform =
+      MethodChannel('com.example.palmear_application/audio');
+
   bool isPalmearAudioAmplifierConnected = false;
   final audioDeviceRepository = AudioDeviceRepositoryImpl();
   bool _isListening = false;
@@ -38,18 +41,20 @@ class _HomeBodyContentState extends State<HomeBodyContent>
   final TreeDetails _treeDetails = TreeDetails();
   late Position _currentLocation;
   bool _isUserInsideFarmValue = false;
-  final AudioProcessor _audioProcessor = AudioProcessor();
+  late AudioProcessor _audioProcessor;
   late AnimationController _animationController;
   late Animation<double> _animation;
   Color _iconColor = const Color(0xFF00916E); // Initial icon color
   Color _buttonBackgroundColor = Colors.white;
   int _redColorCount = 0;
   String _resultLabel = "Healthy";
+  String _scanStatusMessage = ""; // State variable for scan status message
 
   @override
   void initState() {
     super.initState();
     checkPermission();
+    _audioProcessor = AudioProcessor();
     _initUserInsideFarmChecker();
 
     _animationController = AnimationController(
@@ -63,40 +68,58 @@ class _HomeBodyContentState extends State<HomeBodyContent>
         curve: Curves.easeInOut,
       ),
     );
-  }
 
-  void updateUI() {
-    List<List<double>> spectrogram = generateSimulatedSpectrogram(1, 128);
-    Color newColor = getColorFromSpectrogram(spectrogram);
-
-    setState(() {
-      _buttonBackgroundColor = newColor;
-      if (_buttonBackgroundColor == Colors.red) {
-        _redColorCount++;
-      }
-      // Check if the red color count is 10 and stop if true
-      if (_redColorCount == 10) {
-        _resultLabel = "Infested";
-        _stopListening();
+    _platform.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'updateFrequency':
+          double frequency = call.arguments;
+          updateUI(frequency);
+          break;
+        case 'generateSpectrogram':
+          // List<dynamic> spectrogram = call.arguments;
+          break;
+        default:
+          throw MissingPluginException();
       }
     });
   }
 
+  Future<void> updateUI(double frequency) async {
+    Color? newColor = await _audioProcessor.processFrequency(frequency);
+    if (newColor != null) {
+      if (!mounted) return;
+      setState(() {
+        _buttonBackgroundColor = newColor;
+        if (_buttonBackgroundColor == Colors.red) {
+          _redColorCount++;
+        }
+        if (_redColorCount == 10) {
+          // Adjust the threshold as needed
+          _resultLabel = "Infested";
+          _stopListening();
+        }
+      });
+    }
+  }
+
   void _startCountdown() async {
+    setState(() {
+      _scanStatusMessage = "Scanning.."; // Set initial scanning message
+    });
+
     if (await _audioProcessor.requestMicrophonePermission()) {
-      updateUI();
       _audioProcessor.startStreaming();
       const oneSec = Duration(seconds: 1);
       timer = Timer.periodic(
         oneSec,
         (Timer timer) {
+          if (!mounted) return; // Check if the widget is still mounted
           setState(() {
             if (_countdown < 1) {
               _redColorCount = 0;
               _stopListening();
             } else {
               _countdown--;
-              updateUI();
             }
           });
         },
@@ -111,11 +134,14 @@ class _HomeBodyContentState extends State<HomeBodyContent>
     _isListening = false;
     _iconColor = const Color(0xFF00916E);
     _countdown = 50;
-    _redColorCount = 0;
     _audioProcessor.stopStreaming();
     stopScan();
     _userInsideFarmOperations();
     _redColorCount = 0;
+
+    setState(() {
+      _scanStatusMessage = "The last scan result came back as $_resultLabel";
+    });
   }
 
   Future<void> _initUserInsideFarmChecker() async {
@@ -133,6 +159,9 @@ class _HomeBodyContentState extends State<HomeBodyContent>
 
   @override
   void dispose() {
+    if (_isListening) {
+      _stopListening();
+    }
     _animationController.dispose();
     super.dispose();
   }
@@ -155,7 +184,32 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                 PalmearAudioAmplifierStatusText(
                     isPalmearAudioAmplifierConnected:
                         audioDeviceProvider.isPalmearAudioAmplifierConnected),
-                const SizedBox(height: 100),
+                const SizedBox(height: 80),
+                if (_scanStatusMessage.isNotEmpty)
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _scanStatusMessage == "Scanning.."
+                              ? 'Scanning..'
+                              : 'The last scan result came back as ',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 18),
+                        ),
+                        if (_scanStatusMessage != "Scanning..")
+                          TextSpan(
+                            text: _resultLabel,
+                            style: TextStyle(
+                              color: _resultLabel == "Healthy"
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontSize: 18,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 20),
                 CountdownText(countdown: _countdown),
                 const SizedBox(height: 20),
                 Stack(
@@ -194,6 +248,9 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                         onPressed: () async {
                           await _initUserInsideFarmChecker();
                           if (!_isUserInsideFarmValue) {
+                            if (!mounted) {
+                              return; // Check if the widget is still mounted
+                            }
                             showDialog(
                               // ignore: use_build_context_synchronously
                               context: context,
@@ -204,6 +261,9 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                           } else {
                             if (audioDeviceProvider
                                 .isPalmearAudioAmplifierConnected) {
+                              if (!mounted) {
+                                return; // Check if the widget is still mounted
+                              }
                               showDialog(
                                 // ignore: use_build_context_synchronously
                                 context: context,
@@ -230,6 +290,7 @@ class _HomeBodyContentState extends State<HomeBodyContent>
                                   timer?.cancel();
                                   _audioProcessor.stopStreaming();
                                   _animationController.stop();
+                                  _scanStatusMessage = "";
                                 }
                               });
                             }

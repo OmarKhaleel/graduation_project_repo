@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'package:palmear_application/presentation/widgets/general_widgets/toast.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
 class SyncManager {
@@ -56,6 +57,11 @@ class SyncManager {
 
   Future<void> syncToFirestore() async {
     try {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        return; // No internet connection, skip sync
+      }
+
       await syncUsersToFirestore();
       await syncFarmsToFirestore();
       await syncTreesToFirestore();
@@ -140,7 +146,7 @@ class SyncManager {
         }
       }
     } catch (e) {
-      showToast(message: "Error syncing trees to Firestore: $e");
+      debugPrint("Error syncing trees to Firestore: $e");
       debugPrint("Error syncing trees to Firestore: $e");
     }
   }

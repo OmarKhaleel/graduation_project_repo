@@ -1,44 +1,89 @@
-import UIKit
-import Flutter
-import AVFoundation
-import GoogleMaps
+package com.example.palmear_application;
 
-@UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate {
-    private let CHANNEL = "audio_devices"
+import android.content.Context;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import androidx.annotation.NonNull;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.embedding.android.FlutterActivity;
+import android.util.Log;
 
-    override func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-        let channel = FlutterMethodChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
-        channel.setMethodCallHandler({
-            (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-            if call.method == "getAudioDevices" {
-                let session = AVAudioSession.sharedInstance()
-                do {
-                    try session.setCategory(.playAndRecord, options: [.defaultToSpeaker])
-                    let availableInputs = session.availableInputs ?? []
-                    var deviceList = [[String: Any]]()
-                    for input in availableInputs {
-                        var deviceInfo = [String: Any]()
-                        deviceInfo["name"] = input.portName
-                        deviceInfo["sampleRate"] = session.sampleRate
-                        deviceInfo["channels"] = input.channels == 1 ? "mono" : "stereo"
-                        deviceInfo["callbackFunction"] = input.dataSources != nil ? "Yes" : "No"
-                        deviceList.append(deviceInfo)
-                    }
-                    result(deviceList)
-                } catch {
-                    result(FlutterError(code: "AVSessionError", message: "Failed to get audio devices", details: nil))
+public class MainActivity extends FlutterActivity {
+    private static final String CHANNEL = "com.example.palmear_application/audio";
+    private static final String TAG = "MainActivity";
+
+    private List<Double> performFFT(double[] data) {
+        AudioProcessor processor = new AudioProcessor();
+        return processor.performFFT(data);
+    }
+
+    @Override
+    public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
+
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL).setMethodCallHandler(
+            (call, result) -> {
+                switch (call.method) {
+                    case "getAudioDevices":
+                        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                        AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+                        List<Map<String, Object>> deviceList = new ArrayList<>();
+
+                        for (AudioDeviceInfo device : devices) {
+                            Map<String, Object> deviceInfo = new HashMap<>();
+                            deviceInfo.put("name", device.getProductName().toString());
+                            deviceInfo.put("sampleRate", device.getSampleRates()[0]);
+                            deviceInfo.put("channels", device.getChannelCounts()[0] == 1 ? "mono" : "stereo");
+                            deviceInfo.put("callbackFunction", device.isSource() ? "Yes" : "No");
+                            deviceList.add(deviceInfo);
+                        }
+
+                        result.success(deviceList);
+                        break;
+                    case "getSpectrogram":
+                        ArrayList<Double> window = call.argument("window");
+                        if (window == null) {
+                            result.error("NULL_WINDOW", "The 'window' argument is null", null);
+                            return;
+                        }
+                        Log.d(TAG, "Window size: " + window.size());
+                        double[] windowArray = window.stream().mapToDouble(Double::doubleValue).toArray();
+                        List<Double> spectrogram = performFFT(windowArray);
+                        List<Double> normalizedSpectrogram = normalizeSpectrogram(spectrogram);
+                        result.success(normalizedSpectrogram);
+                        break;
+
+                    default:
+                        result.notImplemented();
                 }
-            } else {
-                result(FlutterMethodNotImplemented)
             }
-        })
-        GMSServices.provideAPIKey("AIzaSyCnAV5Ev49ZFIL3vPVIuDugB_Bt4qwajhQ")
-        GeneratedPluginRegistrant.register(with: self)
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        );
+    }
+
+    private List<Double> normalizeSpectrogram(List<Double> spectrogram) {
+        double maxVal = Double.NEGATIVE_INFINITY;
+        double minVal = Double.POSITIVE_INFINITY;
+
+        for (double value : spectrogram) {
+            if (value > maxVal) {
+                maxVal = value;
+            }
+            if (value < minVal) {
+                minVal = value;
+            }
+        }
+
+        List<Double> normalized = new ArrayList<>();
+        for (double value : spectrogram) {
+            double normalizedValue = (value - minVal) / (maxVal - minVal);
+            normalized.add(normalizedValue);
+        }
+        return normalized;
     }
 }
